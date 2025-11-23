@@ -21,21 +21,20 @@
 - 도전학기제 최종 보고서 및 데모 시연
 
 # 프로젝트 구조
-```
-NyangLang/
-├─ README.md
-├─ 00_docs/
-│   └─ spec_nyanglang.md    # 언어 문법 명세
-│
-├─ 01_core/
-│   └─ src/
-│   └─ nyangcore/   # 인터프리터 핵심 로직
-│
-├─ 02_cli/  # CLI 실행 도구
-│
-├─ 03_web/  # 웹 플레이그라운드
-│
-├─ 04_examples/ # 예제 코드 모음
-│
-└─ 05_scripts/  # 빌드/실행 편의 스크립트
-```
+NyangLang/ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ README.md <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 00_docs/ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ [01_변수 연산자 문법](./00_docs/00_변수%20연산자%20문법.md) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ [02_사용자 입출력 문법](./00_docs/01_사용자%20입출력%20문법.md) <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 01_core/ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ src/ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ nyangcore/   # 인터프리터 핵심 로직 <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 02_cli/  # CLI 실행 도구 <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 03_web/  # 웹 플레이그라운드 <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 04_examples/ # 예제 코드 모음 <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ 05_scripts/  # 빌드/실행 편의 스크립트
