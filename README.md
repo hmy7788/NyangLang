@@ -38,3 +38,22 @@ NyangLang/ <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 04_examples/ # 예제 코드 모음 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ 05_scripts/  # 빌드/실행 편의 스크립트
+
+# 실행방법
+1. 가상환경 생성/활성화
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate    # PowerShell
+```
+
+2. 패키지 설치
+```
+pip install -e .
+```
+
+3. 예제 실행
+```
+nyang example/simple.nyang
+```
+
+- 설치 후 `nyang --help`로 옵션을 확인할 수 있습니다.
