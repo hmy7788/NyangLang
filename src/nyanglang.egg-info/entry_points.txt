@@ -1,0 +1,2 @@
+[console_scripts]
+nyang = nyang.cli:main
