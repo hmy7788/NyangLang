@@ -32,7 +32,7 @@ class Interpreter:
         self.execute(cmd)
 
     def execute(self, cmd: Command) -> None:
-        print(cmd)
+        # print(cmd)
 
         kind = cmd.kind
 
