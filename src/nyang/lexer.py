@@ -44,15 +44,20 @@ def lex_line(line: str) -> List[Token]:
     - 한 줄을 토큰 리스트로 변환
     #### output: 명령어에 대한 토큰 리스트
     """
-    src = _strip_comments(line)
+    line = _strip_comments(line)
     tokens: List[Token] = []
 
-    if not src:
+    if not line:
         return tokens
     
+    
+    bodys = {"냥", "냐"}
+    symbols = {"~", "!", "?"}
+    numbers = {".", ","}
+
     # 줄 끝 기호 파악
-    end_char = src[-1] if src[-1] in {"~", "!", "?"} else None # ; print(f'end_char = {end_char}')
-    body = src[:-1] if end_char else src # ; print(f'body = {body}')
+    end_char = line[-1] if line[-1] in {"~", "!", "?"} else None # ; print(f'end_char = {end_char}')
+    body = line[:-1] if end_char else line # ; print(f'body = {body}')
 
     # 1) 앞부분: NYANG / NYA / INT 처리
     nyang_count = body.count("냥") # ; print(f'nyang_count = {nyang_count}')
@@ -75,11 +80,13 @@ def lex_line(line: str) -> List[Token]:
     elif end_char == "?":
         tokens.append(Token(TokenType.QUESTION))
     elif end_char == "!":
-        bang_count = src.count("!")
+        bang_count = line.count("!")
         tokens.append(Token(TokenType.BANG, bang_count))
     # elif end_char == "\n":
     #     tokens.append(Token(TokenType.EOL))
 
     return tokens
 
-# print(lex_line("냥..."))
+# 테스트
+if __name__ == "__main__":
+    print(lex_line("....!")) 
