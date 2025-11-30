@@ -45,97 +45,94 @@ def parse_line(tokens: List[Token]) -> Command:
     if not tokens:
         return Command(kind=CommandKind.NOOP)
 
-    first = tokens[0]
-    last = tokens[-1]
-
     # 1) 변수 선언 & 초기화: <냥 N개><. , M개>
-    if first.type == TokenType.NYANG:
-        if last.type == TokenType.INT:
+    if tokens[0].type == TokenType.NYANG:
+        if tokens[1].type == TokenType.INT:
             return Command(
                 kind=CommandKind.VAR_DECL,
-                nyang_id=first.value,
-                int_value=last.value
+                nyang_id=tokens[0].value,
+                int_value=tokens[1].value
             )
         elif len(tokens) == 1:
             return Command(
                 kind=CommandKind.VAR_DECL,
-                nyang_id=first.value,
+                nyang_id=tokens[0].value,
                 int_value=0
             )
     
     # 2) 정수형 push: <. ,>~
-    if first.type == TokenType.INT:
-        if last.type == TokenType.TILDE:
+    if tokens[0].type == TokenType.INT:
+        if tokens[1].type == TokenType.TILDE:
             return Command(
                 kind=CommandKind.VALUE_PUSH,
-                int_value=first.value
+                int_value=tokens[0].value
             )
         
     # 3) 변수형 push: <냥 N개>~
-    if first.type == TokenType.NYANG:
-        if last.type == TokenType.TILDE:
+    if tokens[0].type == TokenType.NYANG:
+        if tokens[1].type == TokenType.TILDE:
             return Command(
                 kind=CommandKind.VAR_PUSH_OR_ACCESS,
-                nyang_id=first.value
+                nyang_id=tokens[0].value
             )
         
     # 4) 연산자: <냐 N개>~
-    if first.type == TokenType.NYA:
-        if last.type == TokenType.TILDE:
+    if tokens[0].type == TokenType.NYA:
+        if tokens[1].type == TokenType.TILDE:
             return Command(
                 kind=CommandKind.OPERATION,
-                op_arity= first.value
+                op_arity= tokens[0].value
             )
         
     # 5) 입력: <냥 N개>?
-    if first.type == TokenType.NYANG:
-        if last.type == TokenType.QUESTION:
+    if tokens[0].type == TokenType.NYANG:
+        if tokens[1].type == TokenType.QUESTION:
             return Command(
                 kind=CommandKind.INPUT,
-                nyang_id=first.value
+                nyang_id=tokens[0].value
             )
         
     # 6) 출력: <정수형>! or <정수형>!! or <냥 N개>! or <냥 N개>!! or ! or !!
     # 6-1) 출력: <정수형>! or <정수형>!!
-    if first.type == TokenType.INT:
+    if tokens[0].type == TokenType.INT:
         # <정수형>!
-        if last.type == TokenType.BANG and last.value == 1:
+        if tokens[1].type == TokenType.BANG and tokens[1].value == 1:
             return Command(
                 kind=CommandKind.OUTPUT_NUM_TO_LITERAL,
-                int_value=first.value
+                int_value=tokens[0].value
             )
         # <정수형>!!
-        elif last.type == TokenType.BANG and last.value == 2:
+        elif tokens[1].type == TokenType.BANG and tokens[1].value == 2:
             return Command(
                 kind=CommandKind.OUTPUT_NUM_TO_ASCII,
-                int_value=first.value
+                int_value=tokens[0].value
             )
         
     
     # 6-2) 출력: <냥 N개>! or <냥 N개>!!
-    if first.type == TokenType.NYANG:
+    if tokens[0].type == TokenType.NYANG:
         # <냥 N개>!
-        if last.type == TokenType.BANG and last.value == 1:
+        if tokens[1].type == TokenType.BANG and tokens[1].value == 1:
             return Command(
                     kind=CommandKind.OUTPUT_VAR_TO_NUM,
-                    nyang_id=first.value
+                    nyang_id=tokens[0].value
             )
         # <냥 N개>!!
-        elif last.type == TokenType.BANG and last.value == 2:
+        elif tokens[1].type == TokenType.BANG and tokens[1].value == 2:
             return Command(
                 kind=CommandKind.OUTPUT_VAR_TO_ASCII,
-                nyang_id=first.value
+                nyang_id=tokens[0].value
             )
             
-    # 6-3) 출력: ! or !!
-    if first.type == TokenType.BANG:
-        # !
-        if first.value == 1:
+    # 6-3) 출력: 냐! or 냐!!
+    if tokens[0].type == TokenType.NYA and tokens[1].type == TokenType.BANG:
+        # 냐!
+        if tokens[1].value == 1:
             return Command(
                 kind=CommandKind.DISPLAY_STACK
             )
-        # !!
-        elif first.value == 2:
+        # 냐!!
+        elif tokens[1].value == 2:
             return Command(
                 kind=CommandKind.DISPLAY_VARIABLES_TABLE
             )

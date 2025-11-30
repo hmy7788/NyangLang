@@ -23,7 +23,7 @@ class Interpreter:
         self.last_result = None
         self.last_was_operation = False
 
-    def exec_line(self, line: str) -> None:
+    def exec_line(self, line: str, output=print, input_fn=input) -> None:
         """
         NyangLang 코드 한줄을 실행
         """
@@ -89,47 +89,47 @@ class Interpreter:
 
 
     # --- 개별 명령 처리 메소드 ---
-    # 변수 선언 & 초기화
+    # 변수 선언 & 초기화: <냥 N개><. , M개>
     def _exec_var_decl(self, cmd: Command) -> None:
         var_id = cmd.nyang_id   # N
-        value = cmd.int_value
+        value = cmd.int_value   # . , 계산값
         self.variables_table[var_id] = value
 
 
-    # 정수형 push
+    # 정수형 push: <. , M개>~
     def _exec_value_push(self, cmd: Command) -> None:
-        value = cmd.int_value
-        self.stack.append(value)
+        value = cmd.int_value       # . , 계산값
+        self.stack.append(value)    # 스택에 push
         self.last_result = value
 
 
-    # 변수형 push / 대입
+    # 변수형 push / 대입: <냥 N개>~
     def _exec_var_push_or_access(self, cmd: Command) -> None:
-        var_id = cmd.nyang_id
-        int_value =  self.variables_table[var_id]
+        var_id = cmd.nyang_id   # N
 
         # 연산 직후 -> 대입 처리
         if self.last_was_operation:
             if len(self.stack) == 0:
                 raise RuntimeError("스택이 비어있는데 대입을 시도했습니다.")
-            value = self.stack[-1]
+            value = self.last_result
             self.variables_table[var_id] = value
             self.last_result = value
             self.last_was_operation = False
         # 일반 모드 -> 변수 값을 push
         else:
+            int_value =  self.variables_table[var_id]
             self.stack.append(int_value)
             self.last_result = int_value
 
 
-    # 연산자
+    # 연산자: <냐 N개>~
     def _exec_operation(self, cmd: Command) -> None:
         if len(self.stack) < 2:
             raise RuntimeError("연산을 수행하기 위한 스택 값이 부족합니다.")
 
         b = self.stack.pop()
         a = self.stack.pop()
-        op_n = cmd.op_arity
+        op_n = cmd.op_arity # 연산 종류
 
         if op_n == 2:       # 덧셈 연산
             result = a + b
@@ -143,13 +143,13 @@ class Interpreter:
             result = a // b
         else:
             raise RuntimeError("지원하지 않는 연산입니다.")
-         
+        
         self.stack.append(result)
         self.last_result = result
         self.last_was_operation = True
 
 
-    # 입력
+    # 입력: <냥 N개>?
     def _exec_input(self, cmd: Command) -> None:
         var_id = cmd.nyang_id
         try:
@@ -178,16 +178,21 @@ class Interpreter:
     # 출력: <냥 N개>! -> 변수값 10진수 출력
     def _exec_output_var_to_num(self, cmd: Command) -> None:
         var_id = cmd.nyang_id
-        value = self.variables_table.get(var_id, 0)
-        print(value)
+        try:
+            value = self.variables_table[var_id]
+            print(value)
+        except KeyError:
+            raise KeyError(f"변수{var_id}가 정의되지 않았습니다.")
 
 
     # 출력: <냥 N개>!! -> ascii 값 출력
     def _exec_output_var_to_ascii(self, cmd: Command) -> None:
         var_id = cmd.nyang_id
-        value = self.variables_table.get(var_id, 0)
         try:
+            value = self.variables_table[var_id]
             ch = chr(value)
+        except KeyError:
+            raise KeyError(f"변수{var_id}가 정의되지 않았습니다.")
         except ValueError:
             raise ValueError(f"ASCII 범위를 벗어난 값입니다. {value}")
         print(ch)
@@ -196,10 +201,13 @@ class Interpreter:
     # 출력: ! -> 현재 스택 출력
     def _exec_display_stack(self) -> None:
         if self.stack:
-            print("==[현재 스택]==")
-            for i in self.stack:
-                print(f'=      {i}      =')
             print("===============")
+            for i in range(len(self.stack)-1, -1, -1):
+                if i == len(self.stack)-1:
+                    print(f'=      {self.stack[i]}      = <- Top')
+                else:
+                    print(f'=      {self.stack[i]}      =')
+            print("==[현재 스택]==")
         else:
             print("====================")
             print("스택이 비어있습니다.")
