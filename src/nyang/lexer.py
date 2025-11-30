@@ -106,7 +106,7 @@ def lex_line(line: str) -> List[Token]:
 
 # 테스트
 if __name__ == "__main__":
-    print(lex_line("냐!!"))
+    print(lex_line("냐..!"))
     # [토큰화 방법]
     # 1. (NYANG,2) (INT, 3) (BANG, 2) (INT, 4) (BANG, 1)
     # 2. (NYANG, 2) (INT, 7), (BANG, 3)

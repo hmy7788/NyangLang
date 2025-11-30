@@ -23,7 +23,7 @@ class Interpreter:
         self.last_result = None
         self.last_was_operation = False
 
-    def exec_line(self, line: str, output=print, input_fn=input) -> None:
+    def exec_line(self, line: str) -> None:
         """
         NyangLang 코드 한줄을 실행
         """
@@ -32,7 +32,7 @@ class Interpreter:
         self.execute(cmd)
 
     def execute(self, cmd: Command) -> None:
-        # print(cmd)
+        print(cmd)
 
         kind = cmd.kind
 
@@ -82,6 +82,14 @@ class Interpreter:
         # 변수 테이블 display 내장함수
         elif kind == CommandKind.DISPLAY_VARIABLES_TABLE:
             self._exec_display_variable_table()
+
+        # 무조건 점프
+        elif kind == CommandKind.UNCONDITION_JUMP:
+            self._exec_uncondtion_jump(cmd)
+
+        # 조건 점프
+        elif kind == CommandKind.CONDITION_JUMP:
+            self._exec_condtion_jump(cmd)
         
         # 해석 실패
         else:
@@ -223,6 +231,26 @@ class Interpreter:
                 print(f'- 변수{k} = {v}    -')
             print("-----------------")
         else:
-            print("==========================")
+            print("===========================")
             print("변수 테이블이 비어있습니다.")
-            print("==========================")
+            print("===========================")
+
+
+    def _exec_uncondtion_jump(self, cmd: Command):
+        # 숫자형 무조건 점프
+        if cmd.nyang_id is None:
+            jump_line = cmd.int_value
+
+        # 변수형 무조건 점프
+        elif cmd.int_value is None:
+            jump_line = self.variables_table[cmd.nyang_id]
+
+
+    def _exec_condtion_jump(self, cmd: Command):
+        # 숫자형 조건 점프
+        if cmd.nyang_id is None:
+            pass
+
+        # 변수형 조건 점프
+        elif cmd.int_value is None:
+            pass
