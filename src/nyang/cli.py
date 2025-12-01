@@ -1,25 +1,14 @@
 import argparse
 from nyang.interpreter import Interpreter
 
+
 def run_file(path: str) -> None:
     interp = Interpreter()
+    pc = 0
     with open(path, encoding="utf-8") as f:
-        for line in f:
-            interp.exec_line(line)
+        lines = f.readlines()
+        interp.run_program(lines)
 
-def repl() -> None:
-    interp = Interpreter()
-    while True:
-        try:
-            line = input("nyang> ")
-        except (EOFError, KeyboardInterrupt):
-            print("\nbye")
-            break
-        if not line.strip():
-            continue
-        if line.strip() in {"exit", "quit"}:
-            break
-        interp.exec_line(line)
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="nyang")
@@ -28,8 +17,7 @@ def main() -> None:
 
     if args.file:
         run_file(args.file)
-    else:
-        repl()
+
 
 if __name__ == "__main__":
     main()

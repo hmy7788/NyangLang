@@ -15,8 +15,6 @@ class TokenType(Enum):
     TILDE = auto()      # "~"
     BANG = auto()       # "!", "!!"
     QUESTION = auto()   # "?" 
-    COMMENT = auto()    # "#"
-    EOL = auto()        # 줄 끝
 
 
 
@@ -28,12 +26,15 @@ class Token:
 
 ALLOWED_CHARS = {"냥", "냐", ".", ",", "~", "!", "?"}
 
+
 def _strip_comments(line: str) -> str:
     """
     #### input: 1개 라인의 명령어
     - "냥", "냐", ".", ",", "~", "!", "?" 외 문자는 주석 취급
     #### output: 주석을 제외한 명령어
     """
+    idx = line.find("#")
+    if idx != -1: line = line[:idx]
     return "".join(ch for ch in line if ch in ALLOWED_CHARS)
 
 
@@ -50,8 +51,6 @@ def classify_char(ch: str) -> TokenType | None:
         return TokenType.BANG
     if ch == "?":
         return TokenType.QUESTION
-    # if ch == "#":
-    #     return TokenType.COMMENT
     return None
 
 
@@ -63,7 +62,6 @@ def lex_line(line: str) -> List[Token]:
     output: 명령어에 대한 토큰 리스트
     """
     line = _strip_comments(line)
-    # print(line)
     tokens: List[Token] = []
     current_type: TokenType | None = None
     count: int = 0
@@ -82,7 +80,7 @@ def lex_line(line: str) -> List[Token]:
             continue
 
         if (current_type is None) or (current_type != ttype):
-            if current_type is not None and count:
+            if current_type is not None:
                 tokens.append(Token(current_type, count))
 
             current_type = ttype
@@ -106,13 +104,4 @@ def lex_line(line: str) -> List[Token]:
 
 # 테스트
 if __name__ == "__main__":
-    print(lex_line("냐..!"))
-    # [토큰화 방법]
-    # 1. (NYANG,2) (INT, 3) (BANG, 2) (INT, 4) (BANG, 1)
-    # 2. (NYANG, 2) (INT, 7), (BANG, 3)
-
-    # 냥냥...!..,,,..냥냥...!!,,,~
-    # 1. (NYANG, 4) (DOT, 10), (BANG, 3), (COMMA, 6), (TILDE, 1)
-    # 2. (NYANG, 2) (DOT, 3), (BANG, 1), (DOT, 2), (COMMA, 3), (DOT, 2), (NYANG, 2), (DOT, 3), (BANG, 2), (COMMA, 3), (TILDE, 1)
-    # 3. (NYANG, 2) (INT, 3) (BANG, 1) (INT, 1) (BANG, 2) (INT, -3) (TILDE, 1)
-    # 내가 원하는건 3번 방법~ 
+    print(lex_line("..!?"))
