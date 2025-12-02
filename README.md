@@ -1,12 +1,12 @@
 # NyangLang
 > 고양이 울음소리로 작성하는 난해한 한국어 기반 프로그래밍 언어 (Esolang)
 
-**NyangLang**은 `냥`, `냐`, `냐옹`등을 기반으로 구성된 난해한(Esolang) 프로그래밍 언어입니다. 인간이 보기엔 귀엽고 난해하지만, 컴파일러/파서 관점에서는 엄격한 규칙을 갖도록 설계되었습니다. <br>
+**NyangLang**은 `냥`, `냐`등을 기반으로 구성된 난해한(Esolang) 프로그래밍 언어입니다. 인간이 보기엔 귀엽고 난해하지만, 컴파일러/파서 관점에서는 엄격한 규칙을 갖도록 설계되었습니다. <br>
 이 프로젝트는 프로그래밍 언어 설계, 파서 구현, 인터프리터 개발, CLI 및 웹 플레이그라운드 구축까지를 목표로 합니다.
 
 
 # 특징
-- 고양이 울음 기반 문법 (`냥`, `냐`, `냐옹`)
+- 고양이 울음 기반 문법 (`냥`, `냐`)
 - 번호 기반 변수/함수/배열 시스템
 - 직접 구현한 인터프리터 구조
 - CLI 실행 지원
@@ -20,24 +20,59 @@
 - 웹 브라우저 기반 실행 환경 구축
 - 도전학기제 최종 보고서 및 데모 시연
 
+
 # 프로젝트 구조
-NyangLang/ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ README.md <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 00_docs/ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ [01_변수 연산자 문법](./00_docs/00_변수%20연산자%20문법.md) <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ [02_사용자 입출력 문법](./00_docs/01_사용자%20입출력%20문법.md) <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 01_core/ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ src/ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ nyangcore/   # 인터프리터 핵심 로직 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 02_cli/  # CLI 실행 도구 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 03_web/  # 웹 플레이그라운드 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 04_examples/ # 예제 코드 모음 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ 05_scripts/  # 빌드/실행 편의 스크립트
+```
+NyangLang/
+    ┣ __pycache__/
+    ┃
+    ┣ .venv/
+    ┃
+    ┣ cli/
+    ┃  ┣ nyanglang.egg-info/
+    ┃  ┗ setup.py
+    ┃
+    ┣ docs/
+    ┃  ┣ 00_변수 연산자 문법.md
+    ┃  ┣ 01_사용자 입출력 문법.md
+    ┃  ┗ 02_점프문.md
+    ┃
+    ┣ examples/
+    ┃   ┣ 00_ex.nyang
+    ┃   ┣ 01_ex.nyang
+    ┃   ┣ 02_ex.nyang
+    ┃   ┗ 03_ex.nyang
+    ┃
+    ┣ scripts/
+    ┃
+    ┣ src/
+    ┃   ┣ __pycache__/
+    ┃   ┣ nyang/
+    ┃   ┃   ┣ __pycache__/
+    ┃   ┃   ┣ __init__.py
+    ┃   ┃   ┣ ast.py
+    ┃   ┃   ┣ cli.py
+    ┃   ┃   ┣ cmd.py
+    ┃   ┃   ┣ interpreter.py
+    ┃   ┃   ┣ lexer.py
+    ┃   ┃   ┗ parser.py
+    ┃   ┗ nyanglang.egg-info/
+    ┃
+    ┣ web/
+    ┃  ┗ app.py
+    ┃
+    ┣ pyproject.toml
+    ┣ README.md
+    ┣ requirements.txt
+    ┗ test.nyang
+```
+
+
+# 문법 보러가기
+1. [정수,변수, 연산자 문법](./docs/00_변수%20연산자%20문법.md)
+2. [사용자 입출력 문법](./docs/01_사용자%20입출력%20문법.md)
+3. [점프문 문법](./docs/02_점프문.md)
+
 
 # 실행방법
 1. 가상환경 생성/활성화
