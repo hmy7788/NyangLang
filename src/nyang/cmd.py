@@ -123,41 +123,41 @@ class CommandExecMixin:
             raise RuntimeError("알 수 없는 output_mode")
         
         # 
-        print(out, end=end)
+        self.write(out, end=end)
 
 
 
     # 출력: 냐! -> 현재 스택 출력
     def _exec_display_stack(self: "Interpreter") -> None:
-        print()
+        self.write()
         if self.stack:
-            print("===============")
+            self.write("===============")
             for i in range(len(self.stack)-1, -1, -1):
                 if i == len(self.stack)-1:
-                    print(f'=      {self.stack[i]}      = <- Top')
+                    self.write(f'=      {self.stack[i]}      = <- Top')
                 else:
-                    print(f'=      {self.stack[i]}      =')
-            print("==[현재 스택]==")
+                    self.write(f'=      {self.stack[i]}      =')
+            self.write("==[현재 스택]==")
         else:
-            print("====================")
-            print("스택이 비어있습니다.")
-            print("====================")
+            self.write("====================")
+            self.write("스택이 비어있습니다.")
+            self.write("====================")
 
 
 
     # 출력: 냐!! -> 현재 변수 테이블 출력
     def _exec_display_variable_table(self: "Interpreter") -> None:
         vt = self.variables_table
-        print()
+        self.write()
         if vt:
-            print("--[변수 테이블]--")
+            self.write("--[변수 테이블]--")
             for k, v in vt.items():
-                print(f'- 변수{k} = {v}    -')
-            print("-----------------")
+                self.write(f'- 변수{k} = {v}    -')
+            self.write("-----------------")
         else:
-            print("===========================")
-            print("변수 테이블이 비어있습니다.")
-            print("===========================")
+            self.write("===========================")
+            self.write("변수 테이블이 비어있습니다.")
+            self.write("===========================")
 
 
     # 점프문: <숫자형/변수형>?<숫자형/변수형>

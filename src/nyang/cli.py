@@ -4,7 +4,6 @@ from nyang.interpreter import Interpreter
 
 def run_file(path: str) -> None:
     interp = Interpreter()
-    pc = 0
     with open(path, encoding="utf-8") as f:
         lines = f.readlines()
         interp.run_program(lines)

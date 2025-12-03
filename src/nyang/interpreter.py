@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
 
 from .lexer import lex_line
 from .parser import parse_line, Command, CommandKind
@@ -17,12 +17,19 @@ class Interpreter(CommandExecMixin):
     stack: List[int] = field(default_factory=list)
     last_result: Optional[int] = None
     last_was_operation: bool = False
+    output_func: Callable[[str], None] = print
+
+
+    def write(self, msg="", end=None) -> None:
+        self.output_func(msg, end=end)
+
 
     def reset(self) -> None:
         self.variables_table.clear()
         self.stack.clear()
         self.last_result = None
         self.last_was_operation = False
+
 
     # ───────────────── 파일 실행용: pc 기반 루프 ─────────────────
     def run_program(self, lines: List[str]) -> None:

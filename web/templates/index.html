@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>냥Lang 온라인 실행기</title>
+  <link rel="stylesheet" href="../static/style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-mark">냥</span>
+        <div class="logo-text">
+          <h1>냥Lang 온라인</h1>
+          <p>뇌절 고양이 언어를 브라우저에서 바로 실행해보세요.</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="pill pill-beta">BETA</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="panel panel-editor">
+        <div class="panel-header">
+          <span class="panel-title">코드 편집기</span>
+          <div class="panel-actions">
+            <select id="example-select" class="select">
+              <option value="">샘플 코드 불러오기…</option>
+              <option value="hello">[예제] 헬로 월드</option>
+              <option value="loop">[예제] 반복 출력</option>
+              <option value="input">[예제] 입력 / 출력</option>
+            </select>
+            <button id="clear-btn" class="btn btn-ghost">초기화</button>
+          </div>
+        </div>
+
+        <div class="editor-wrapper">
+          <div class="editor-shell">
+            <pre id="line-numbers" class="line-numbers">1</pre>
+            <textarea id="code-editor" spellcheck="false">
+# 여기에 냥Lang 코드를 입력하세요.
+# 예제는 오른쪽 상단 셀렉트 박스에서 선택할 수 있습니다.
+            </textarea>
+          </div>
+        </div>
+
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <button id="run-btn" class="btn btn-primary">
+              실행하기 ⏵ (Ctrl + Enter)
+            </button>
+          </div>
+          <div class="toolbar-right">
+            <span class="shortcut-hint">
+              탭 / 줄바꿈 등은 일반 코드 에디터처럼 동작합니다.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-output">
+        <div class="panel-header">
+          <span class="panel-title">출력 콘솔</span>
+          <button id="copy-output-btn" class="btn btn-ghost btn-small">
+            출력 복사
+          </button>
+        </div>
+        <div class="output-wrapper">
+          <pre id="output" class="output"><span class="output-placeholder">
+여기에 실행 결과가 표시됩니다.
+코드를 작성한 뒤 [실행하기] 버튼을 눌러보세요.
+          </span></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>🐾 NyangLang Playground</span>
+      <span class="dot">•</span>
+      <span>백엔드는 FastAPI, 인터프리터는 Python으로 돌아갑니다.</span>
+    </footer>
+  </div>
+
+  <script>
+    const editor = document.getElementById('code-editor');
+    const lineNumbers = document.getElementById('line-numbers');
+    const runBtn = document.getElementById('run-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const output = document.getElementById('output');
+    const exampleSelect = document.getElementById('example-select');
+    const copyOutputBtn = document.getElementById('copy-output-btn');
+
+    const examples = {
+      hello: `# 간단한 헬로 월드 예제
+# (여기에 실제 냥Lang 문법으로 예제 넣어도 됨)
+
+냥 "Hello, NyangLang!".
+`,
+      loop: `# 반복 출력 예제
+# (실제 문법에 맞게 수정해서 사용하세요)
+
+냥 5번 "야옹!".
+`,
+      input: `# 입력 / 출력 예제 (개발 예정)
+# 사용자 입력을 받아서 그대로 출력하는 예시입니다.
+
+# TODO: 냥Lang에서 입력 문법이 정해지면 여기 채워넣기
+`
+    };
+
+    function setOutput(text, isError = false) {
+      output.textContent = text || '';
+      if (isError) {
+        output.classList.add('output-error');
+      } else {
+        output.classList.remove('output-error');
+      }
+    }
+
+    function updateLineNumbers() {
+      const value = editor.value || '';
+      const lines = value.split('\n').length || 1;
+      let buf = '';
+      for (let i = 1; i <= lines; i++) {
+        buf += i + '\n';
+      }
+      lineNumbers.textContent = buf;
+    }
+
+    async function runCode() {
+      const code = editor.value;
+
+      if (!code.trim()) {
+        setOutput('⚠ 코드가 비어 있습니다. 무언가를 적어 주세요!', true);
+        return;
+      }
+
+      setOutput('⏳ 실행 중입니다…');
+
+      try {
+        // FastAPI의 run(code: str) 시그니처에 맞춰 form-urlencoded로 전송
+        const body = new URLSearchParams({ code });
+
+        const res = await fetch('/run', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+          },
+          body
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          setOutput(`❌ 서버 오류 (${res.status})\n\n${text}`, true);
+          return;
+        }
+
+        const data = await res.json();
+        const logs = data.stdout || [];
+
+        if (!logs.length) {
+          setOutput('실행은 되었지만 출력이 없습니다. (stdout 비어 있음)');
+        } else {
+          setOutput(data.stdout);
+        }
+      } catch (err) {
+        setOutput('❌ 요청 중 오류가 발생했습니다:\n\n' + err, true);
+      }
+    }
+
+    runBtn.addEventListener('click', runCode);
+
+    // 코드 입력/붙여넣기 시 라인 넘버 갱신
+    editor.addEventListener('input', updateLineNumbers);
+
+    // 스크롤 동기화
+    editor.addEventListener('scroll', () => {
+      lineNumbers.scrollTop = editor.scrollTop;
+    });
+
+    // 초기 한 번 호출
+    updateLineNumbers();
+
+    clearBtn.addEventListener('click', () => {
+      editor.value = '';
+      updateLineNumbers();
+      setOutput('출력 영역이 초기화되었습니다.');
+    });
+
+    exampleSelect.addEventListener('change', (e) => {
+      const key = e.target.value;
+      if (!key) return;
+      editor.value = examples[key] || '';
+      updateLineNumbers();
+    });
+
+    copyOutputBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(output.textContent || '');
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    // Ctrl + Enter로 실행
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        runCode();
+      }
+    });
+  </script>
+</body>
+</html>
