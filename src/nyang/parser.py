@@ -20,7 +20,10 @@ class CommandKind(Enum):
     OUTPUT = auto()                         # 상수/변수값 -> 10진수/ASCII 출력
     DISPLAY_STACK = auto()                  # 스택 상태 출력 (!)
     DISPLAY_VARIABLES_TABLE = auto()        # 변수 테이블 출력 (!!)
-    JUMP = auto()                           # 점프문: <숫자형/변수형>?<숫자형/변수형>        
+    JUMP = auto()                           # 점프문: <숫자형/변수형>?<숫자형/변수형>
+    ARRAY_DECL = auto()                     # 배열 선언
+    ARRAY_WRITE = auto()                    # 배열 쓰기     
+    ARRAY_READ = auto()   
     
 
 
@@ -38,6 +41,12 @@ class Command:
     jump_kind: Optional[int] = None
     condition: Optional[int] = None
     line: Optional[int] = None
+    array_decl_mode: Optional[int] = None
+    array_write_mode: Optional[int] = None
+    array_read_mode: Optional[int] = None
+    array_id: Optional[int] = None
+    array_length: Optional[int] = None
+    array_idx: Optional[int] = None
 
 
 
@@ -309,9 +318,111 @@ def parse_line(tokens: List[Token]) -> Command:
                     line=tokens[2].value,
                     jump_kind=4
                 )
+    
+        # 배열 선언문: <배열명>!<정수형/변수형>
+        if tokens[0].type == TokenType.NYANG and tokens[1].type == TokenType.BANG:
+            # 배열명!<정수형>
+            if tokens[2].type == TokenType.INT:
+                return Command(
+                    kind=CommandKind.ARRAY_DECL,
+                    array_decl_mode=0,
+                    array_id=tokens[0].value,
+                    array_length=tokens[2].value
+                )
+
+            # 배열명!<변수형>
+            if tokens[2].type == TokenType.NYANG:
+                return Command(
+                    kind=CommandKind.ARRAY_DECL,
+                    array_decl_mode=1,
+                    array_id=tokens[0].value,
+                    array_length=tokens[2].value
+                )
 
     
     if len(tokens) == 4:
-        pass # 몰라 언젠간 쓰겠지
-    
+        pass
+
+    if len(tokens) == 5:
+        # 배열 쓰기: <배열명>!<정수형/변수형>!<정수형/변수형>
+        if tokens[0].type == TokenType.NYANG and tokens[1].type == TokenType.BANG and tokens[3].type == TokenType.BANG:
+            # 배열명!정수형!정수형
+            if tokens[2].type == TokenType.INT and tokens[4].type == TokenType.INT:
+                return Command(
+                    kind=CommandKind.ARRAY_WRITE,
+                    array_write_mode=0,
+                    array_id=tokens[0].value,
+                    array_idx=tokens[2].value,
+                    int_value=tokens[4].value
+                )
+            
+            # 배열명!정수형!변수형
+            if tokens[2].type == TokenType.INT and tokens[4].type == TokenType.NYANG:
+                return Command(
+                    kind=CommandKind.ARRAY_WRITE,
+                    array_write_mode=1,
+                    array_id=tokens[0].value,
+                    array_idx=tokens[2].value,
+                    int_value=tokens[4].value
+                )
+
+            # 배열명!변수형!정수형
+            if tokens[2].type == TokenType.NYANG and tokens[4].type == TokenType.INT:
+                return Command(
+                    kind=CommandKind.ARRAY_WRITE,
+                    array_write_mode=2,
+                    array_id=tokens[0].value,
+                    array_idx=tokens[2].value,
+                    int_value=tokens[4].value
+                )
+
+            # 배열명!변수형!변수형
+            if tokens[2].type == TokenType.NYANG and tokens[4].type == TokenType.NYANG:
+                return Command(
+                    kind=CommandKind.ARRAY_WRITE,
+                    array_write_mode=3,
+                    array_id=tokens[0].value,
+                    array_idx=tokens[2].value,
+                    int_value=tokens[4].value
+                )
+
+
+    if len(tokens) == 7:
+        if tokens[0].type == TokenType.NYANG and tokens[1].type == TokenType.BANG and tokens[2].type == TokenType.QUESTION:
+            if tokens[4].type == TokenType.BANG and tokens[5].type == TokenType.QUESTION:
+                if tokens[3].type == TokenType.INT and tokens[6].type == TokenType.TILDE:
+                    return Command(
+                        kind=CommandKind.ARRAY_READ,
+                        array_id=tokens[0].value,
+                        array_read_mode=0,
+                        array_idx=tokens[3].value
+                    )
+
+                if tokens[3].type == TokenType.INT and tokens[6].type == TokenType.NYANG:
+                    return Command(
+                        kind=CommandKind.ARRAY_READ,
+                        array_id=tokens[0].value,
+                        array_read_mode=1,
+                        array_idx=tokens[3].value,
+                        nyang_id=tokens[6].value
+                    )
+
+                if tokens[3].type == TokenType.NYANG and tokens[6].type == TokenType.TILDE:
+                    return Command(
+                        kind=CommandKind.ARRAY_READ,
+                        array_id=tokens[0].value,
+                        array_read_mode=2,
+                        array_idx=tokens[3].value,
+                    )
+
+                if tokens[3].type == TokenType.INT and tokens[6].type == TokenType.NYANG:
+                    return Command(
+                        kind=CommandKind.ARRAY_READ,
+                        array_id=tokens[0].value,
+                        array_read_mode=3,
+                        array_idx=tokens[3].value,
+                        nyang_id=tokens[6].value
+                    )
+            
+
     raise SyntaxError(f"파싱할 수 없는 문장 패턴입니다. : {tokens}")

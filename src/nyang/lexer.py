@@ -104,4 +104,4 @@ def lex_line(line: str) -> List[Token]:
 
 # 테스트
 if __name__ == "__main__":
-    print(lex_line("..!?"))
+    print(lex_line("냥!?....!?~"))

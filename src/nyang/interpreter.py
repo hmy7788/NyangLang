@@ -14,6 +14,7 @@ from .cmd import CommandExecMixin
 @dataclass
 class Interpreter(CommandExecMixin):
     variables_table: Dict[int, int] = field(default_factory=dict)
+    array_table: Dict[int, List] = field(default_factory=dict)
     stack: List[int] = field(default_factory=list)
     last_result: Optional[int] = None
     last_was_operation: bool = False
@@ -88,6 +89,18 @@ class Interpreter(CommandExecMixin):
 
         elif kind == CommandKind.JUMP:
             return self._exec_jump(cmd, pc)
+        
+        elif kind == CommandKind.ARRAY_DECL:
+            self._exec_array_decl(cmd)
+            return pc + 1
+        
+        elif kind == CommandKind.ARRAY_WRITE:
+            self._exec_array_write(cmd)
+            return pc + 1
+        
+        elif kind == CommandKind.ARRAY_READ:
+            self._exec_array_read(cmd)
+            return pc + 1
 
         else:
             raise ValueError(f"알 수 없는 CommandKind: {kind}")

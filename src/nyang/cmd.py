@@ -199,3 +199,60 @@ class CommandExecMixin:
             return line-1
         else:
             return pc+1
+        
+
+    def _exec_array_decl(self: "Interpreter", cmd: Command):
+        array_id = cmd.array_id
+
+        if cmd.array_decl_mode == 0:
+            array_length = cmd.array_length
+
+        elif cmd.array_decl_mode == 1:
+            try:
+                array_length = self.variables_table[cmd.array_length]
+            except KeyError:
+                KeyError(f"변수{cmd.array_length}가 정의되지 않았습니다.")
+        else:
+            raise 
+
+        array = [0 for _ in range(array_length)]
+        self.array_table[array_id] = array
+
+    def _exec_array_write(self: "Interpreter", cmd: Command):
+        array_id = cmd.array_id
+
+        try:
+            array = self.array_table[array_id]
+        except KeyError:
+            raise KeyError(f"배열{array_id}가 정의되지 않았습니다.")
+
+        if cmd.array_write_mode == 0:
+            array_idx = cmd.array_idx
+            value = cmd.int_value
+
+        elif cmd.array_write_mode == 1:
+            array_idx = cmd.array_idx
+            try:
+                value = self.variables_table[cmd.int_value]
+            except KeyError:
+                raise KeyError(f"변수{cmd.int_value}")
+            
+            try:
+                pass
+            except:
+                pass
+                
+
+
+
+        elif cmd.array_write_mode == 2:
+            pass
+
+        elif cmd.array_write_mode == 3:
+            pass
+
+        else:
+            raise
+
+    def _exec_array_read(self: "Interpreter", cmd: Command):
+        pass
