@@ -8,6 +8,52 @@ from typing import Optional, List
 
 from .lexer import Token, TokenType
 
+class TokenStream:
+    def __init__(self, tokens: List[Token]):
+        self.tokens = tokens
+        self.pos = 0
+
+    def peek(self):
+        if self.pos < len(self.tokens):
+            return self.tokens[self.pos]
+        return None
+
+    def consume(self):
+        """토큰 하나를 통째로 소비"""
+        if self.pos < len(self.tokens):
+            t = self.tokens[self.pos]
+            self.pos += 1
+            return t
+        return None
+
+    def consume_value(self, target_type: TokenType, needed_amount: int):
+        """
+        ★ 핵심 기능: 토큰 쪼개기 (Token Splitting)
+        예: (BANG, 3)이 있을 때 needed_amount=1을 요청하면
+            -> 현재 토큰을 (BANG, 2)로 줄이고,
+            -> (BANG, 1)에 해당하는 가상의 토큰을 리턴
+        """
+        token = self.peek()
+        
+        # 토큰이 없거나 타입이 다르면 실패
+        if not token or token.type != target_type:
+            return None
+        
+        # 1. 딱 맞는 경우 (그냥 소비)
+        if token.value == needed_amount:
+            self.pos += 1
+            return token
+        
+        # 2. 토큰 값이 더 큰 경우 (쪼개기!) -> 님이 원하던 기능
+        elif token.value > needed_amount:
+            # 원본 토큰의 값을 줄임 (3 -> 2)
+            token.value -= needed_amount
+            # 1짜리 새 토큰을 리턴 (마치 1짜리가 있었던 것처럼)
+            return Token(target_type, needed_amount)
+            
+        # 3. 값이 부족한 경우
+        else:
+            return None # 에러 처리
 
 
 class CommandKind(Enum):
@@ -426,3 +472,6 @@ def parse_line(tokens: List[Token]) -> Command:
             
 
     raise SyntaxError(f"파싱할 수 없는 문장 패턴입니다. : {tokens}")
+
+if __name__ == "__main__":
+    pass

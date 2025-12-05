@@ -23,8 +23,18 @@ class Token:
     type: TokenType
     value: Optional[int] = None
 
-
+# 허용하는 문자
 ALLOWED_CHARS = {"냥", "냐", ".", ",", "~", "!", "?"}
+
+# 토큰별 최대 연속 허용 개수 (0은 무제한)
+MAX_COUNTS = {
+    TokenType.NYANG: 0,
+    TokenType.INT: 0,
+    TokenType.NYA: 5,
+    TokenType.TILDE: 1,
+    TokenType.BANG: 2,
+    TokenType.QUESTION: 3
+}
 
 
 def _strip_comments(line: str) -> str:
@@ -78,8 +88,20 @@ def lex_line(line: str) -> List[Token]:
                 current_type = None
                 count = 0
             continue
+        
+        if (current_type is not None) and (current_type == ttype):
+            limit = MAX_COUNTS.get(current_type, 0)
 
-        if (current_type is None) or (current_type != ttype):
+            if current_type == TokenType.INT:
+                count += 1 if ch == "." else -1
+            
+            else:
+                if limit > 0 and abs(count) >= limit:
+                    tokens.append(Token(current_type, count))
+                    count = 0
+                count += 1
+
+        elif (current_type is None) or (current_type != ttype):
             if current_type is not None:
                 tokens.append(Token(current_type, count))
 
@@ -89,14 +111,9 @@ def lex_line(line: str) -> List[Token]:
                 count = 1 if ch == '.' else -1
             else:
                 count = 1
-        else:
-            if ttype == TokenType.INT:
-                count += 1 if ch == '.' else -1
-            else:
-                count += 1
 
     # 마지막 토큰 flush
-    if current_type is not None and count:
+    if (current_type is not None) and (count):
         tokens.append(Token(current_type, count))
 
     return tokens
@@ -104,4 +121,10 @@ def lex_line(line: str) -> List[Token]:
 
 # 테스트
 if __name__ == "__main__":
-    print(lex_line("냥!?....!?~"))
+    print(lex_line("냥!!!???....~"))
+    # NYANG, 1
+    # BANG, 2
+    # BANG, 1
+    # QUESTION, 3
+    # INT, 4
+    # TITLE, 1
