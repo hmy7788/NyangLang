@@ -9,3 +9,6 @@ requires-python = ">=3.8"
 
 [project.scripts]
 nyang = "nyang.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
