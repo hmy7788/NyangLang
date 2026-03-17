@@ -4,6 +4,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
+from tokenize import TokenError
 from typing import List, Optional
 
 
@@ -119,12 +120,13 @@ def lex_line(line: str) -> List[Token]:
     return tokens
 
 
+def print_lex_line(line: List[Token]) -> None:
+    for token in line:
+        print(f"({token.type.name},{token.value})", end=' ')
+
+
 # 테스트
 if __name__ == "__main__":
-    print(lex_line("냥.."))
-    # NYANG, 1
-    # BANG, 2
-    # BANG, 1
-    # QUESTION, 3
-    # INT, 4
-    # TITLE, 1
+    print_lex_line(lex_line("냥..냥~"))
+    # [Token(type=<TokenType.NYANG: 1>, value=1), Token(type=<TokenType.INT: 3>, value=2)]
+    
