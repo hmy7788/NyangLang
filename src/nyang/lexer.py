@@ -121,7 +121,7 @@ def lex_line(line: str) -> List[Token]:
 
 # 테스트
 if __name__ == "__main__":
-    print(lex_line("냥!!!???....~"))
+    print(lex_line("냥.."))
     # NYANG, 1
     # BANG, 2
     # BANG, 1
