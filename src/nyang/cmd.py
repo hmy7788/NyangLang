@@ -90,9 +90,9 @@ class CommandExecMixin:
     # 출력: <숫자형/변수형?<!/!!><?/??/???>
     def _exec_output(self: "Interpreter", cmd: Command) -> None:
         # 출력 종류
-        if cmd.output_kind == "integer":
+        if cmd.output_kind == "nyang":
             value = cmd.int_value
-        elif cmd.output_kind == "variable":
+        elif cmd.output_kind == "int":
             try:
                 var_id = cmd.nyang_id
                 value = self.variables_table[var_id]

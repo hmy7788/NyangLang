@@ -52,7 +52,7 @@ class Command:
 
 
 
-def parse_command(token_stream: TokenStream) -> Command:
+def parse_command(token_stream: TokenStream) -> Optional[Command]:
     """
     """
     token = token_stream.peek()
@@ -64,6 +64,7 @@ def parse_command(token_stream: TokenStream) -> Command:
         return parse_nya_command(token_stream)
     elif token.type == TokenType.INT:
         return parse_int_command(token_stream)
+    return None
     
 
 def parse_line(tokens: List[Token]) -> List[Command]:
@@ -75,8 +76,16 @@ def parse_line(tokens: List[Token]) -> List[Command]:
     commands: List[Command] = []
 
     while token_stream.peek() is not None:
-        # print(token_stream.peek())
+        before_pos = token_stream.pos
         command = parse_command(token_stream)
+
+        # 토큰 소비가 되었는데 문법 매칭에 실패한 경우는 명시적으로 에러 처리
+        if command is None:
+            if token_stream.pos == before_pos:
+                tok = token_stream.peek()
+                raise SyntaxError(f"파싱이 진행되지 않았습니다: {tok}")
+            raise SyntaxError(f"문장 파싱 실패 (근처 pos={before_pos})")
+
         commands.append(command)
     return commands
 

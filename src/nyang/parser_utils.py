@@ -34,7 +34,7 @@ class Command:
     output_mode: Optional[str] = None
     jump_kind: Optional[int] = None
     condition: Optional[int] = None
-    line: Optional[int] = None
+    jump_line: Optional[int] = None
     array_decl_mode: Optional[int] = None
     array_write_mode: Optional[int] = None
     array_read_mode: Optional[int] = None
@@ -108,40 +108,46 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
     if next_token is None:
         return None
 
+    # 변수 선언 (냥..)
     if next_token.type == TokenType.INT:
         int_token = next_token
         token_stream.consume()
         return Command(CommandKind.VAR_DECL, nyang_id=nyang_token.value, int_value=int_token.value)
 
+    # 변수 스택 push (냥~)
     if next_token.type == TokenType.TILDE:
         tilde_token = next_token
         token_stream.consume()
         return Command(CommandKind.VAR_PUSH_OR_ACCESS, nyang_id=nyang_token.value)
 
+    # 변수 입력 (냥?)
     if next_token.type == TokenType.QUESTION:
         question_token = next_token
         token_stream.consume()
         return Command(CommandKind.INPUT, nyang_id=nyang_token.value)
 
+    # 변수 출력
     if next_token.type == TokenType.BANG:
         bang_token = next_token
         token_stream.consume()
         next_token = token_stream.peek()
 
+        # 문법 오류 처리 필요
         if next_token is None: return None
 
+        # <변수형><!><?>
         if next_token.type == TokenType.QUESTION:
             question_token = next_token
             token_stream.consume()
             
             if bang_token.value == 1: output_form = 'decimal'
             elif bang_token.value == 2: output_form = 'ascii'
-            else: return None
+            else: return None # 느낌표 개수 오류
 
             if question_token.value == 1: output_mode = 'newline'
             elif question_token.value == 2: output_mode = 'inline'
             elif question_token.value == 3: output_mode = 'space'
-            else: return None
+            else: return None # 물음표 개수 오류
 
             return Command(CommandKind.OUTPUT, 
                            output_kind='nyang',
@@ -160,12 +166,23 @@ def parse_nya_command(token_stream: TokenStream) -> Command:
     nya_token = token_stream.consume()
     next_token = token_stream.peek()
 
+    # 냐 오류 처리 필요
     if next_token is None: return None
 
+    # 연산자 결정 (<냐>~)
     if next_token.type == TokenType.TILDE:
         tilde_token = next_token
         token_stream.consume()
-        return Command(CommandKind.OPERATION, op_arity=tilde_token.value)
+        return Command(CommandKind.OPERATION, op_arity=nya_token.value)
+
+    # 디버깅
+    if next_token.type == TokenType.BANG:
+        bang_token = next_token
+        token_stream.consume()
+
+        if bang_token.value == 1: return Command(CommandKind.DISPLAY_STACK) # 스택 출력
+        elif bang_token.value == 2: return Command(CommandKind.DISPLAY_VARIABLES_TABLE) # 변수테이블 출력
+        else: return None
 
     return None
 
