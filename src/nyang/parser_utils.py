@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
+from tkinter import N
 from typing import Optional, List
 from .lexer import Token, TokenType
 
@@ -117,6 +118,40 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
         token_stream.consume()
         return Command(CommandKind.VAR_PUSH_OR_ACCESS, nyang_id=nyang_token.value)
 
+    if next_token.type == TokenType.QUESTION:
+        question_token = next_token
+        token_stream.consume()
+        return Command(CommandKind.INPUT, nyang_id=nyang_token.value)
+
+    if next_token.type == TokenType.BANG:
+        bang_token = next_token
+        token_stream.consume()
+        next_token = token_stream.peek()
+
+        if next_token is None: return None
+
+        if next_token.type == TokenType.QUESTION:
+            question_token = next_token
+            token_stream.consume()
+            
+            if bang_token.value == 1: output_form = 'decimal'
+            elif bang_token.value == 2: output_form = 'ascii'
+            else: return None
+
+            if question_token.value == 1: output_mode = 'newline'
+            elif question_token.value == 2: output_mode = 'inline'
+            elif question_token.value == 3: output_mode = 'space'
+            else: return None
+
+            return Command(CommandKind.OUTPUT, 
+                           output_kind='nyang',
+                           output_form=output_form,
+                           output_mode=output_mode,
+                           nyang_id=nyang_token.value)
+
+        else:
+            return None
+
     return None
 
 
@@ -125,8 +160,7 @@ def parse_nya_command(token_stream: TokenStream) -> Command:
     nya_token = token_stream.consume()
     next_token = token_stream.peek()
 
-    if next_token is None:
-        return None
+    if next_token is None: return None
 
     if next_token.type == TokenType.TILDE:
         tilde_token = next_token
@@ -147,5 +181,33 @@ def parse_int_command(token_stream: TokenStream) -> Command:
         tilde_token = next_token
         token_stream.consume()
         return Command(CommandKind.VALUE_PUSH, int_value=int_token.value)
+
+    if next_token.type == TokenType.BANG:
+        bang_token = next_token
+        token_stream.consume()
+        next_token = token_stream.peek()
+
+        if next_token is None: return None
+
+        if next_token.type == TokenType.QUESTION:
+            question_token = next_token
+            token_stream.consume()
+
+            if bang_token.value == 1: output_form = 'decimal'
+            elif bang_token.value == 2: output_form = 'ascii'
+            else: return None
+
+            if question_token.value == 1: output_mode = 'newline'
+            elif question_token.value == 2: output_mode = 'inline'
+            elif question_token.value == 3: output_mode = 'space'
+            else: return None
+
+            return Command(CommandKind.OUTPUT,
+                           output_kind='int',
+                           output_form=output_form,
+                           output_mode=output_mode,
+                           int_value=int_token.value)
+
+        else: return None
 
     return None

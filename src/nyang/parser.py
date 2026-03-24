@@ -7,7 +7,7 @@ from enum import Enum, auto
 from typing import Optional, List
 from .lexer import Token, TokenType, lex_line
 from .parser_utils import TokenStream, parse_nyang_command, parse_nya_command, parse_int_command
-
+from dataclasses import asdict
 
 class CommandKind(Enum):
     NOOP = auto()               
@@ -75,7 +75,7 @@ def parse_line(tokens: List[Token]) -> List[Command]:
     commands: List[Command] = []
 
     while token_stream.peek() is not None:
-        print(token_stream.peek())
+        # print(token_stream.peek())
         command = parse_command(token_stream)
         commands.append(command)
     return commands
@@ -84,7 +84,11 @@ def parse_line(tokens: List[Token]) -> List[Command]:
 
 def print_parse_line(commands: List[Command]) -> None:
     for cmd in commands:
-        print(cmd)
+        data = asdict(cmd)
+        filtered = {k: v for k, v in data.items() if v is not None}
+        # kind는 Enum이라 이름만 보이게
+        filtered["kind"] = cmd.kind.name
+        print(filtered)
 
 if __name__ == "__main__":
-    print_parse_line(parse_line(lex_line("냥..냥~")))
+    print_parse_line(parse_line(lex_line("..!?..,,!!??")))
