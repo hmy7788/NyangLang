@@ -32,7 +32,7 @@ class Command:
     output_kind: Optional[str] = None
     output_form: Optional[str] = None
     output_mode: Optional[str] = None
-    jump_kind: Optional[int] = None
+    jump_kind: Optional[str] = None
     condition: Optional[int] = None
     jump_line: Optional[int] = None
     array_decl_mode: Optional[int] = None
@@ -102,7 +102,7 @@ class TokenStream:
 
 
 def parse_nyang_command(token_stream: TokenStream) -> Command:
-    nyang_token = token_stream.consume()
+    nyang_token1 = token_stream.consume()
     next_token = token_stream.peek()
     
     if next_token is None:
@@ -112,19 +112,40 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
     if next_token.type == TokenType.INT:
         int_token = next_token
         token_stream.consume()
-        return Command(CommandKind.VAR_DECL, nyang_id=nyang_token.value, int_value=int_token.value)
+        return Command(CommandKind.VAR_DECL, nyang_id=nyang_token1.value, int_value=int_token.value)
 
     # 변수 스택 push (냥~)
     if next_token.type == TokenType.TILDE:
         tilde_token = next_token
         token_stream.consume()
-        return Command(CommandKind.VAR_PUSH_OR_ACCESS, nyang_id=nyang_token.value)
+        return Command(CommandKind.VAR_PUSH_OR_ACCESS, nyang_id=nyang_token1.value)
 
     # 변수 입력 (냥?)
     if next_token.type == TokenType.QUESTION:
         question_token = next_token
         token_stream.consume()
-        return Command(CommandKind.INPUT, nyang_id=nyang_token.value)
+        next_token = token_stream.peek()
+
+        if next_token is None: return Command(CommandKind.INPUT, nyang_id=nyang_token1.value)
+
+        # <변수형(조건)>?<정수형(점프 라인)>
+        elif next_token.type == TokenType.INT:
+            int_token = next_token
+            token_stream.consume()
+
+            return Command(CommandKind.JUMP, 
+                           jump_kind='nyang?int',
+                           condition=nyang_token1.value,
+                           jump_line=int_token.value)
+
+        elif next_token.type == TokenType.NYANG:
+            nyang_token2 = next_token
+            token_stream.consume()
+
+            return Command(CommandKind.JUMP,
+                           jump_kind='nyang?nyang',
+                           condition=nyang_token1.value,
+                           jump_line=nyang_token2)
 
     # 변수 출력
     if next_token.type == TokenType.BANG:
@@ -153,7 +174,7 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
                            output_kind='nyang',
                            output_form=output_form,
                            output_mode=output_mode,
-                           nyang_id=nyang_token.value)
+                           nyang_id=nyang_token1.value)
 
         else:
             return None

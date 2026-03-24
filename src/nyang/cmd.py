@@ -90,9 +90,9 @@ class CommandExecMixin:
     # 출력: <숫자형/변수형?<!/!!><?/??/???>
     def _exec_output(self: "Interpreter", cmd: Command) -> None:
         # 출력 종류
-        if cmd.output_kind == "nyang":
+        if cmd.output_kind == "int":
             value = cmd.int_value
-        elif cmd.output_kind == "int":
+        elif cmd.output_kind == "nyang":
             try:
                 var_id = cmd.nyang_id
                 value = self.variables_table[var_id]
@@ -165,33 +165,33 @@ class CommandExecMixin:
         jump_kind = cmd.jump_kind
 
         # 점프문1: <숫자형>?<숫자형>
-        if jump_kind == 1:
+        if jump_kind == 'int?int':
             condition = cmd.condition
-            line = cmd.line
+            line = cmd.jump_line
 
         # 점프문2: <숫자형>?<변수형>
-        elif jump_kind == 2:
+        elif jump_kind == 'int?nyang':
             condition = cmd.condition
             try:
-                line = self.variables_table[cmd.line]
+                line = self.variables_table[cmd.jump_line]
             except KeyError:
-                raise KeyError(f"변수{cmd.line}은 정의되지 않았습니다.")
+                raise KeyError(f"변수{cmd.jump_line}은 정의되지 않았습니다.")
 
         # 점프문3: <변수형>?<숫자형>
-        elif jump_kind == 3:
+        elif jump_kind == 'nyang?int':
             try:
                 condition = self.variables_table[cmd.condition]
             except KeyError:
                 raise KeyError(f"변수{cmd.condition}은 정의되지 않았습니다.")
-            line = cmd.line
+            line = cmd.jump_line
         
         # 점프문4: <변수형>?<변수형>
-        elif jump_kind == 4:
+        elif jump_kind == 'nyang?nyang':
             try:
                 condition = self.variables_table[cmd.condition]
-                line = self.variables_table[cmd.line]
+                line = self.variables_table[cmd.jump_line]
             except KeyError:
-                raise KeyError(f"변수{cmd.condition} 또는 변수{cmd.line}은 정의되지 않았습니다.")
+                raise KeyError(f"변수{cmd.condition} 또는 변수{cmd.jump_line}은 정의되지 않았습니다.")
         
         if condition != 0:
             if line <= 0:
