@@ -100,4 +100,4 @@ def print_parse_line(commands: List[Command]) -> None:
         print(filtered)
 
 if __name__ == "__main__":
-    print_parse_line(parse_line(lex_line("..!?..,,!!??")))
+    print_parse_line(parse_line(lex_line("1")))

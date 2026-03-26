@@ -127,6 +127,6 @@ def print_lex_line(line: List[Token]) -> None:
 
 # 테스트
 if __name__ == "__main__":
-    print_lex_line(lex_line("냥..냥~"))
+    print_lex_line(lex_line("1"))
     # [Token(type=<TokenType.NYANG: 1>, value=1), Token(type=<TokenType.INT: 3>, value=2)]
     

@@ -93,21 +93,9 @@
     const copyOutputBtn = document.getElementById('copy-output-btn');
 
     const examples = {
-      hello: `# 간단한 헬로 월드 예제
-# (여기에 실제 냥Lang 문법으로 예제 넣어도 됨)
-
-냥 "Hello, NyangLang!".
-`,
-      loop: `# 반복 출력 예제
-# (실제 문법에 맞게 수정해서 사용하세요)
-
-냥 5번 "야옹!".
-`,
-      input: `# 입력 / 출력 예제 (개발 예정)
-# 사용자 입력을 받아서 그대로 출력하는 예시입니다.
-
-# TODO: 냥Lang에서 입력 문법이 정해지면 여기 채워넣기
-`
+      hello: `# 간단한 헬로 월드 예제\n# (여기에 실제 냥Lang 문법으로 예제 넣어도 됨)\n냥 "Hello, NyangLang!".`,
+      loop: `# 반복 출력 예제\n# (실제 문법에 맞게 수정해서 사용하세요)냥 5번 "야옹!".`,
+      input: `# 입력 / 출력 예제 (개발 예정)\n# 사용자 입력을 받아서 그대로 출력하는 예시입니다.\n# TODO: 냥Lang에서 입력 문법이 정해지면 여기 채워넣기`
     };
 
     function setOutput(text, isError = false) {
@@ -140,15 +128,13 @@
       setOutput('⏳ 실행 중입니다…');
 
       try {
-        // FastAPI의 run(code: str) 시그니처에 맞춰 form-urlencoded로 전송
-        const body = new URLSearchParams({ code });
-
+        // ★ 1. Form 방식(URLSearchParams) 삭제하고 JSON 방식으로 변경!
         const res = await fetch('/run', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            'Content-Type': 'application/json' // 백엔드야 JSON 간다!
           },
-          body
+          body: JSON.stringify({ code: code }) // 코드를 JSON 형태로 포장
         });
 
         if (!res.ok) {
@@ -158,12 +144,16 @@
         }
 
         const data = await res.json();
-        const logs = data.stdout || [];
 
-        if (!logs.length) {
-          setOutput('실행은 되었지만 출력이 없습니다. (stdout 비어 있음)');
+        const status = data.status || "success"; // 백엔드에서 통째로 문자열(String)로 오니까 이렇게 받기
+        const result = data.result || "";
+        const error_msg = data.error_msg || "";
+
+        // ★ 2. 문자열이 비어있는지 체크
+        if (status === "error") {
+          setOutput(`[실행 도중 에러 발생!]\n${error_msg}\n\n[이전까지의 출력]:\n${result}`, true);
         } else {
-          setOutput(data.stdout);
+          setOutput(result);
         }
       } catch (err) {
         setOutput('❌ 요청 중 오류가 발생했습니다:\n\n' + err, true);
