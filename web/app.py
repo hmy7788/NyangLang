@@ -60,4 +60,4 @@ async def run(req: CodeRequest):
         }
 
 
-    
+# 웹 구동시 -> uvicorn web.app:app --reload 써서 들어가기

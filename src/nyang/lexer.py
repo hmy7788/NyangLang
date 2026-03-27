@@ -45,8 +45,9 @@ def _strip_comments(line: str) -> str:
     #### output: 주석을 제외한 명령어
     """
     idx = line.find("#")
-    if idx != -1: line = line[:idx]
-    return "".join(ch for ch in line if ch in ALLOWED_CHARS)
+    if idx != -1: 
+        return line[:idx]
+    return line
 
 
 def classify_char(ch: str) -> TokenType | None:
@@ -67,54 +68,45 @@ def classify_char(ch: str) -> TokenType | None:
 
 
 def lex_line(line: str) -> List[Token]:
-    """
-    input: 명령어 라인
-    - 한 줄을 토큰 리스트로 변환
-    output: 명령어에 대한 토큰 리스트
-    """
     line = _strip_comments(line)
     tokens: List[Token] = []
     current_type: TokenType | None = None
     count: int = 0
 
-    if not line:
-        return []
+    if not line.strip(): return []
 
     for ch in line:
-        ttype = classify_char(ch)
-
-        if ttype is None:
-            if (current_type is not None) and (count):
-                tokens.append(Token(current_type, count))
-                current_type = None
-                count = 0
-            continue
-        
-        if (current_type is not None) and (current_type == ttype):
-            limit = MAX_COUNTS.get(current_type, 0)
-
-            if current_type == TokenType.INT:
-                count += 1 if ch == "." else -1
-            
-            else:
-                if limit > 0 and abs(count) >= limit:
-                    tokens.append(Token(current_type, count))
-                    count = 0
-                count += 1
-
-        elif (current_type is None) or (current_type != ttype):
+        if ch.isspace():
             if current_type is not None:
                 tokens.append(Token(current_type, count))
+                current_type, count = None, 0
+            continue
 
+        ttype = classify_char(ch)
+        if ttype is None:
+            raise SyntaxError(f"어휘 오류: '{ch}'는 허용하지 않습니다.")
+
+        # 1. 타입이 바뀌면 지금까지 쌓인 토큰을 저장(Flush)
+        if current_type != ttype:
+            if current_type is not None:
+                tokens.append(Token(current_type, count))
+            
+            # 새 토큰 시작
             current_type = ttype
-
             if ttype == TokenType.INT:
                 count = 1 if ch == '.' else -1
             else:
                 count = 1
+        
+        # 2. 같은 타입이면 계속 개수만 세기 (제한 없이!)
+        else:
+            if ttype == TokenType.INT:
+                count += 1 if ch == "." else -1
+            else:
+                count += 1
 
-    # 마지막 토큰 flush
-    if (current_type is not None) and (count):
+    # 마지막 남은 토큰 처리
+    if current_type is not None:
         tokens.append(Token(current_type, count))
 
     return tokens
@@ -127,6 +119,6 @@ def print_lex_line(line: List[Token]) -> None:
 
 # 테스트
 if __name__ == "__main__":
-    print_lex_line(lex_line("1"))
+    print_lex_line(lex_line("냥~~"))
     # [Token(type=<TokenType.NYANG: 1>, value=1), Token(type=<TokenType.INT: 3>, value=2)]
     
