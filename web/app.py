@@ -1,7 +1,8 @@
-from typing import List
+from typing import Optional
 
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -18,6 +19,20 @@ class CodeRequest(BaseModel):
     code: str
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_: Request, exc: RequestValidationError):
+    # 요청 JSON 검증 실패도 동일한 응답 스키마로 통일
+    messages = "; ".join(error["msg"] for error in exc.errors())
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "result": "",
+            "error_msg": messages,
+        },
+    )
+
+
 # 기본 화면: index.html 렌더링
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -27,20 +42,17 @@ async def index(request: Request):
 # 코드 실행 API
 @app.post("/run")
 async def run(req: CodeRequest):
-    status = "success"
     result = ""
-    error_msg = None
 
-    def collect(msg: str, end: str = "") -> None:
+    def collect(msg: str = "", end: Optional[str] = None) -> None:
         nonlocal result
-        result += str(msg) + end
-
-    interp = Interpreter(output_func=collect)
-
-    # ★ req.code 로 꺼내서 씁니다.
-    lines = req.code.splitlines()
+        safe_end = "" if end is None else end
+        result += str(msg) + safe_end
 
     try:
+        # 인터프리터 관련 작업을 모두 try 안에 넣어 서버 안정성 강화
+        interp = Interpreter(output_func=collect)
+        lines = req.code.splitlines()
         interp.run_program(lines)
 
         # 성공
