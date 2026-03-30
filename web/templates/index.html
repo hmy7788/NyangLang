@@ -25,13 +25,14 @@
         <div class="panel-header">
           <span class="panel-title">코드 편집기</span>
           <div class="panel-actions">
+            <button id="run-btn" class="btn btn-primary">실행하기 ⏵</button>
+            <button id="clear-btn" class="btn btn-ghost">초기화 ↺</button>
             <select id="example-select" class="select">
               <option value="">샘플 코드 불러오기…</option>
               <option value="hello">[예제] 헬로 월드</option>
               <option value="loop">[예제] 반복 출력</option>
               <option value="input">[예제] 입력 / 출력</option>
             </select>
-            <button id="clear-btn" class="btn btn-ghost">초기화</button>
           </div>
         </div>
 
@@ -48,13 +49,8 @@
 
         <div class="toolbar">
           <div class="toolbar-left">
-            <button id="run-btn" class="btn btn-primary">
-              실행하기 ⏵ (Ctrl + Enter)
-            </button>
-          </div>
-          <div class="toolbar-right">
             <span class="shortcut-hint">
-              탭 / 줄바꿈 등은 일반 코드 에디터처럼 동작합니다.
+              Ctrl + Enter로도 실행할 수 있습니다.
             </span>
           </div>
         </div>
@@ -93,9 +89,21 @@
     const copyOutputBtn = document.getElementById('copy-output-btn');
 
     const examples = {
-      hello: `# 간단한 헬로 월드 예제\n# (여기에 실제 냥Lang 문법으로 예제 넣어도 됨)\n냥 "Hello, NyangLang!".`,
-      loop: `# 반복 출력 예제\n# (실제 문법에 맞게 수정해서 사용하세요)냥 5번 "야옹!".`,
-      input: `# 입력 / 출력 예제 (개발 예정)\n# 사용자 입력을 받아서 그대로 출력하는 예시입니다.\n# TODO: 냥Lang에서 입력 문법이 정해지면 여기 채워넣기`
+      hello: `...!?`,
+      loop: `냥.
+냥냥.....
+냥!?
+냥~
+.~
+냐냐~
+냥~
+냥냥~
+,~
+냐냐~
+냥냥~
+냥냥?...`,
+      input: `냥?
+냥!?`
     };
 
     function setOutput(text, isError = false) {
@@ -119,44 +127,46 @@
 
     async function runCode() {
       const code = editor.value;
+      const defaultRunLabel = '실행하기 ⏵';
 
       if (!code.trim()) {
         setOutput('⚠ 코드가 비어 있습니다. 무언가를 적어 주세요!', true);
         return;
       }
 
+      runBtn.disabled = true;
+      runBtn.textContent = '실행 중...';
       setOutput('⏳ 실행 중입니다…');
 
       try {
-        // ★ 1. Form 방식(URLSearchParams) 삭제하고 JSON 방식으로 변경!
         const res = await fetch('/run', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json' // 백엔드야 JSON 간다!
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ code: code }) // 코드를 JSON 형태로 포장
+          body: JSON.stringify({ code })
         });
 
-        if (!res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
           const text = await res.text();
           setOutput(`❌ 서버 오류 (${res.status})\n\n${text}`, true);
           return;
         }
 
         const data = await res.json();
-
-        const status = data.status || "success"; // 백엔드에서 통째로 문자열(String)로 오니까 이렇게 받기
-        const result = data.result || "";
-        const error_msg = data.error_msg || "";
-
-        // ★ 2. 문자열이 비어있는지 체크
-        if (status === "error") {
-          setOutput(`[실행 도중 에러 발생!]\n${error_msg}\n\n[이전까지의 출력]:\n${result}`, true);
-        } else {
-          setOutput(result);
+        if (!res.ok || data.status === 'error') {
+          setOutput(`❌ ${data.error_msg || `요청 실패 (${res.status})`}`, true);
+          return;
         }
+
+        const result = data.result ?? data.stdout ?? '';
+        setOutput(result || '실행은 되었지만 출력이 없습니다.');
       } catch (err) {
         setOutput('❌ 요청 중 오류가 발생했습니다:\n\n' + err, true);
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = defaultRunLabel;
       }
     }
 
