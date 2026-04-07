@@ -1,7 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
-from tkinter import N
 from typing import Optional, List
 from .lexer import Token, TokenType
 
