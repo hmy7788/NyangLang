@@ -8,10 +8,12 @@ __pycache__/
 .eggs/
 build/
 dist/
+
 # Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
+web/__pycache__/
 
 # Packaging files
 *.egg-info/
