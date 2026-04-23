@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from nyang.interpreter import Interpreter
+from nyang._03_interpreter import Interpreter
 
 app = FastAPI()
 

@@ -1,6 +1,7 @@
+# import ========================================
 import argparse
-from nyang.interpreter import Interpreter
-
+from nyang._03_interpreter import Interpreter
+# import ========================================
 
 def run_file(path: str) -> None:
     interp = Interpreter()
