@@ -8,7 +8,7 @@ version = "0.1.0"
 requires-python = ">=3.8"
 
 [project.scripts]
-nyang = "nyang.cli:main"
+nyang = "nyang._04_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
