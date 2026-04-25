@@ -17,6 +17,7 @@ templates = Jinja2Templates(directory="web/templates")
 
 class CodeRequest(BaseModel):
     code: str
+    inputs: list[str] = []
 
 
 @app.exception_handler(RequestValidationError)
@@ -50,8 +51,18 @@ async def run(req: CodeRequest):
         result += str(msg) + safe_end
 
     try:
-        # 인터프리터 관련 작업을 모두 try 안에 넣어 서버 안정성 강화
-        interp = Interpreter(output_func=collect)
+        input_queue = list(req.inputs)
+        input_idx = 0
+
+        def web_input(prompt: str = "") -> str:
+            nonlocal input_idx
+            if input_idx >= len(input_queue):
+                raise RuntimeError("입력값이 부족합니다. 입력창에 값을 추가해주세요.")
+            val = input_queue[input_idx]
+            input_idx += 1
+            return val
+
+        interp = Interpreter(output_func=collect, input_func=web_input)
         lines = req.code.splitlines()
         interp.run_program(lines)
 
@@ -63,12 +74,12 @@ async def run(req: CodeRequest):
         }
 
     except Exception as e:
-        # 에러
         print(f'예외 발생: {e}')
         return {
             "status": "error",
             "result": result,
-            "error_msg": str(e)
+            "error_msg": str(e),
+            "error_line": interp.current_line
         }
 
 

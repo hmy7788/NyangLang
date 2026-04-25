@@ -40,13 +40,20 @@
         <div class="editor-wrapper">
           <div class="editor-shell">
             <pre id="line-numbers" class="line-numbers">1</pre>
-            <textarea id="code-editor" spellcheck="false">
-# 여기에 냥Lang 코드를 입력하세요.
+            <textarea id="code-editor" spellcheck="false"># 여기에 냥Lang 코드를 입력하세요.
 # 예제는 오른쪽 상단 셀렉트 박스에서 선택할 수 있습니다.
             </textarea>
           </div>
         </div>
 
+
+        <div class="input-section">
+          <div class="input-header">
+            <span class="input-title">입력값</span>
+            <span class="input-hint">공백 또는 줄바꿈으로 구분</span>
+          </div>
+          <textarea id="input-editor" class="input-editor" spellcheck="false" placeholder="예) 1 2 3  또는 줄바꿈으로 구분"></textarea>
+        </div>
 
         <div class="toolbar">
           <div class="toolbar-left">
@@ -65,8 +72,7 @@
           </button>
         </div>
         <div class="output-wrapper">
-          <pre id="output" class="output"><span class="output-placeholder">
-여기에 실행 결과가 표시됩니다.
+          <pre id="output" class="output"><span class="output-placeholder">여기에 실행 결과가 표시됩니다.
 코드를 작성한 뒤 [실행하기] 버튼을 눌러보세요.
           </span></pre>
         </div>
@@ -88,23 +94,60 @@
     const output = document.getElementById('output');
     const exampleSelect = document.getElementById('example-select');
     const copyOutputBtn = document.getElementById('copy-output-btn');
+    const inputEditor = document.getElementById('input-editor');
 
     const examples = {
-      hello: `...!?`,
-      loop: `냥.
-냥냥.....
-냥!?
-냥~
-.~
-냐냐~
-냥~
-냥냥~
-,~
-냐냐~
-냥냥~
-냥냥?...`,
-      input: `냥?
-냥!?`
+      hello: `# "Hello World!"를 출력하는 코드
+# H: 72
+..........~야옹 .......~야옹
+냐냐냐냐~야옹 냥~~야옹 냥~야옹 ..~야옹 냐냐~야옹 냥~~야옹
+냥!!??야옹
+
+# e: 101
+..........~야옹 ..........~야옹
+냐냐냐냐~야옹 냥냥~~야옹 냥냥~야옹 .~야옹 냐냐~야옹 냥냥~~야옹
+냥냥!!??야옹
+
+# l: 108
+냥냥~야옹 .......~야옹
+냐냐~야옹 냥냥냥~~야옹 냥냥냥~야옹
+냥냥냥!!??야옹
+
+# l: 108
+냥냥~야옹 .......~야옹
+냐냐~야옹 냥냥냥~~야옹 냥냥냥~야옹
+냥냥냥!!??야옹
+
+# o: 111
+...~야옹 냐냐~야옹 냥냥냥냥~~야옹
+냥냥냥냥!!???야옹
+
+# W: 87
+냥~야옹 ...............~야옹
+냐냐~야옹 냥~~야옹 냥!!??야옹
+
+# o: 111
+냥냥냥냥!!??야옹
+
+# r: 114
+냥냥냥냥~야옹 ...~야옹 냐냐~야옹 냥냥냥냥냥~~야옹
+냥냥냥냥냥!!??야옹
+
+# l: 108
+냥냥냥!!??야옹
+
+# d: 100
+냥냥~야옹 .~야옹 냐냐냐~야옹 냥냥~~야옹
+냥냥!!??야옹
+
+# !: 33
+...~야옹 ...........~야옹 냐냐냐냐~야옹 냥~~야옹
+냥!!??야옹`,
+      loop: `냥.야옹 냥냥.....야옹
+냥!?야옹 냥~야옹 .~야옹 냐냐~야옹 냥~~야옹
+냥냥~야옹 ,~야옹 냐냐~야옹 냥냥~~야옹
+냥냥?..야옹`,
+      input: `냥??야옹 냥!?야옹`
     };
 
     function setOutput(text, isError = false) {
@@ -116,14 +159,28 @@
       }
     }
 
-    function updateLineNumbers() {
+    let currentErrorLine = null;
+
+    function updateLineNumbers(errorLine = null) {
+      currentErrorLine = errorLine;
       const value = editor.value || '';
       const lines = value.split('\n').length || 1;
       let buf = '';
       for (let i = 1; i <= lines; i++) {
-        buf += i + '\n';
+        if (i === errorLine) {
+          buf += `<span style="color:#ef4444;font-weight:bold">${i}</span>\n`;
+        } else {
+          buf += i + '\n';
+        }
       }
-      lineNumbers.textContent = buf;
+      lineNumbers.innerHTML = buf;
+
+      if (errorLine) {
+        const lineHeight = parseFloat(getComputedStyle(editor).lineHeight);
+        const scrollTarget = (errorLine - 1) * lineHeight - editor.clientHeight / 3;
+        editor.scrollTop = Math.max(0, scrollTarget);
+        lineNumbers.scrollTop = editor.scrollTop;
+      }
     }
 
     async function runCode() {
@@ -137,15 +194,21 @@
 
       runBtn.disabled = true;
       runBtn.textContent = '실행 중...';
+      updateLineNumbers(null);
       setOutput('⏳ 실행 중입니다…');
 
       try {
+        const inputs = inputEditor.value
+          .trim()
+          .split(/\s+/)
+          .filter(s => s !== '');
+
         const res = await fetch('/run', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ code })
+          body: JSON.stringify({ code, inputs })
         });
 
         const contentType = res.headers.get('content-type') || '';
@@ -157,7 +220,10 @@
 
         const data = await res.json();
         if (!res.ok || data.status === 'error') {
-          setOutput(`❌ ${data.error_msg || `요청 실패 (${res.status})`}`, true);
+          const errLine = data.error_line || null;
+          updateLineNumbers(errLine);
+          const lineInfo = errLine ? ` (${errLine}번 줄)` : '';
+          setOutput(`❌${lineInfo} ${data.error_msg || `요청 실패 (${res.status})`}`, true);
           return;
         }
 
@@ -173,8 +239,8 @@
 
     runBtn.addEventListener('click', runCode);
 
-    // 코드 입력/붙여넣기 시 라인 넘버 갱신
-    editor.addEventListener('input', updateLineNumbers);
+    // 코드 입력/붙여넣기 시 라인 넘버 갱신 (에러 하이라이트 유지)
+    editor.addEventListener('input', () => updateLineNumbers(currentErrorLine));
 
     // 스크롤 동기화
     editor.addEventListener('scroll', () => {
@@ -186,7 +252,7 @@
 
     clearBtn.addEventListener('click', () => {
       editor.value = '';
-      updateLineNumbers();
+      updateLineNumbers(null);
       setOutput('출력 영역이 초기화되었습니다.');
     });
 

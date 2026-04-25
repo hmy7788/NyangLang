@@ -456,3 +456,49 @@ body {
     flex: 1 1 auto;
   }
 }
+
+
+.input-section {
+  border-top: 1px solid var(--line);
+  padding: 8px 12px 4px;
+}
+
+.input-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.input-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #966f60;
+}
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
+.input-editor {
+  width: 100%;
+  height: 72px;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 2px solid #f0cabd;
+  border-radius: var(--radius-md);
+  background: rgba(255, 250, 246, 0.9);
+  color: #6a4b3f;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.input-editor:focus {
+  border-color: var(--accent);
+  background: #fff;
+}
