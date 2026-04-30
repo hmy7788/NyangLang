@@ -12,8 +12,8 @@ from nyang._02_parser import parse_line
 
 class CommandExecMixin:
     """
-    Interpreter에서 사용하는 개별 명령 실행 로직을 모은 믹스인 클래스
-    Interpreter가 이 클래스를 상속받아 self._exec_*를 그대로 사용
+    - Interpreter에서 사용하는 개별 명령 실행 로직을 모은 믹스인 클래스
+    - Interpreter가 이 클래스를 상속받아 self._exec_*를 그대로 사용
     """
 
     # 1. <NYNAG><INT><YAONG>: VAR_DECL: 변수 선언
@@ -26,9 +26,9 @@ class CommandExecMixin:
     # 2. <NYNAG><TILDE_1><YAONG>: VAR_PUSH: 스택에 변수값 PUSH
     def _exec_var_push(self: "Interpreter", cmd: Command) -> None:
         var_id = cmd.nyang_id
-        
-        if var_id in self.variables_table:
-            int_value = self.variables_table[var_id]
+        if var_id not in self.variables_table:
+            raise KeyError(f"변수{var_id}가 정의되지 않았습니다.")
+        int_value = self.variables_table[var_id]
         self.stack.append(int_value)
         self.stack_top = int_value
 
@@ -72,8 +72,8 @@ class CommandExecMixin:
     def _exec_input(self: "Interpreter", cmd: Command) -> None:
         var_id = cmd.nyang_id
         try:
-            raw = input(f"변수{var_id} 입력 > ")
-            value = int(raw.rstrip())
+            raw = self.input_func(f"변수{var_id} 입력 > ")
+            value = int(str(raw).rstrip())
         except ValueError:
             raise ValueError("정수만 입력할 수 있습니다.")
         self.variables_table[var_id] = value
@@ -255,17 +255,22 @@ class Interpreter(CommandExecMixin):
     stack_top: Optional[int] = None
     last_was_operation: bool = False
     output_func: Callable[[str], None] = print
+    input_func: Callable[[int], None] = input
+    current_line: int = 0
 
 
     def write(self, msg="", end=None) -> None:
         self.output_func(msg, end=end)
+
+    
+    def inputs(self, msg=""):
+        self.input_func()
 
 
     def reset(self) -> None:
         self.variables_table.clear()
         self.stack.clear()
         self.stack_top = None
-        self.last_was_operation = False
 
 
     # ───────────────── 파일 실행용: pc 기반 루프 ─────────────────
@@ -275,6 +280,7 @@ class Interpreter(CommandExecMixin):
         n = len(clean_lines)
 
         while 0 <= pc < n:
+            self.current_line = pc + 1
             line = clean_lines[pc]
             tokens = lex_line(line)
             if not tokens:

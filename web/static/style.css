@@ -245,6 +245,9 @@ body {
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 #code-editor::selection {
@@ -457,6 +460,29 @@ body {
   }
 }
 
+
+.terminal-prompt {
+  color: #966f60;
+  font-family: var(--font-mono);
+}
+
+.terminal-input-line {
+  display: inline;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--accent);
+  color: #6a4b3f;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  outline: none;
+  min-width: 100px;
+  width: 200px;
+  padding: 0 2px;
+}
 
 .input-section {
   border-top: 1px solid var(--line);

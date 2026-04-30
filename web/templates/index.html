@@ -40,20 +40,12 @@
         <div class="editor-wrapper">
           <div class="editor-shell">
             <pre id="line-numbers" class="line-numbers">1</pre>
-            <textarea id="code-editor" spellcheck="false"># 여기에 냥Lang 코드를 입력하세요.
+            <textarea id="code-editor" spellcheck="false" wrap="off"># 여기에 냥Lang 코드를 입력하세요.
 # 예제는 오른쪽 상단 셀렉트 박스에서 선택할 수 있습니다.
             </textarea>
           </div>
         </div>
 
-
-        <div class="input-section">
-          <div class="input-header">
-            <span class="input-title">입력값</span>
-            <span class="input-hint">공백 또는 줄바꿈으로 구분</span>
-          </div>
-          <textarea id="input-editor" class="input-editor" spellcheck="false" placeholder="예) 1 2 3  또는 줄바꿈으로 구분"></textarea>
-        </div>
 
         <div class="toolbar">
           <div class="toolbar-left">
@@ -94,7 +86,6 @@
     const output = document.getElementById('output');
     const exampleSelect = document.getElementById('example-select');
     const copyOutputBtn = document.getElementById('copy-output-btn');
-    const inputEditor = document.getElementById('input-editor');
 
     const examples = {
       hello: `# "Hello World!"를 출력하는 코드
@@ -150,110 +141,140 @@
       input: `냥??야옹 냥!?야옹`
     };
 
-    function setOutput(text, isError = false) {
-      output.textContent = text || '';
-      if (isError) {
-        output.classList.add('output-error');
-      } else {
-        output.classList.remove('output-error');
-      }
-    }
-
     let currentErrorLine = null;
+    let ws = null;
 
+    // ── 라인 번호 ──────────────────────────────────────────
     function updateLineNumbers(errorLine = null) {
       currentErrorLine = errorLine;
-      const value = editor.value || '';
-      const lines = value.split('\n').length || 1;
+      const lines = (editor.value || '').split('\n').length || 1;
       let buf = '';
       for (let i = 1; i <= lines; i++) {
-        if (i === errorLine) {
-          buf += `<span style="color:#ef4444;font-weight:bold">${i}</span>\n`;
-        } else {
-          buf += i + '\n';
-        }
+        buf += i === errorLine
+          ? `<span style="color:#ef4444;font-weight:bold">${i}</span>\n`
+          : i + '\n';
       }
       lineNumbers.innerHTML = buf;
-
       if (errorLine) {
-        const lineHeight = parseFloat(getComputedStyle(editor).lineHeight);
-        const scrollTarget = (errorLine - 1) * lineHeight - editor.clientHeight / 3;
-        editor.scrollTop = Math.max(0, scrollTarget);
+        const lh = parseFloat(getComputedStyle(editor).lineHeight);
+        editor.scrollTop = Math.max(0, (errorLine - 1) * lh - editor.clientHeight / 3);
         lineNumbers.scrollTop = editor.scrollTop;
       }
     }
 
-    async function runCode() {
-      const code = editor.value;
-      const defaultRunLabel = '실행하기 ⏵';
+    // ── 출력창 ────────────────────────────────────────────
+    function clearOutput() {
+      output.innerHTML = '';
+      output.classList.remove('output-error');
+    }
 
+    function appendOutput(text, isError = false) {
+      const span = document.createElement('span');
+      span.textContent = text;
+      if (isError) span.style.color = 'var(--error)';
+      output.appendChild(span);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    // ── 터미널 입력 프롬프트 ──────────────────────────────
+    function showInputPrompt(prompt) {
+      const line = document.createElement('span');
+      line.className = 'terminal-input-line';
+
+      const promptSpan = document.createElement('span');
+      promptSpan.className = 'terminal-prompt';
+      promptSpan.textContent = prompt;
+
+      const inputEl = document.createElement('input');
+      inputEl.type = 'text';
+      inputEl.className = 'terminal-input';
+
+      line.appendChild(promptSpan);
+      line.appendChild(inputEl);
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+      setTimeout(() => inputEl.focus(), 0);
+
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const value = inputEl.value;
+        const staticSpan = document.createElement('span');
+        staticSpan.textContent = prompt + value + '\n';
+        line.replaceWith(staticSpan);
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'input', value }));
+        }
+      });
+    }
+
+    // ── 실행 ──────────────────────────────────────────────
+    function runCode() {
+      const code = editor.value;
       if (!code.trim()) {
-        setOutput('⚠ 코드가 비어 있습니다. 무언가를 적어 주세요!', true);
+        clearOutput();
+        appendOutput('⚠ 코드가 비어 있습니다. 무언가를 적어 주세요!', true);
         return;
       }
 
+      if (ws) { ws.close(); ws = null; }
+
+      clearOutput();
+      updateLineNumbers(null);
       runBtn.disabled = true;
       runBtn.textContent = '실행 중...';
-      updateLineNumbers(null);
-      setOutput('⏳ 실행 중입니다…');
 
-      try {
-        const inputs = inputEditor.value
-          .trim()
-          .split(/\s+/)
-          .filter(s => s !== '');
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${location.host}/ws/run`);
 
-        const res = await fetch('/run', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ code, inputs })
-        });
+      ws.onopen = () => ws.send(JSON.stringify({ code }));
 
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-          const text = await res.text();
-          setOutput(`❌ 서버 오류 (${res.status})\n\n${text}`, true);
-          return;
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'output') {
+          appendOutput(msg.data);
+        } else if (msg.type === 'input_request') {
+          showInputPrompt(msg.prompt);
+        } else if (msg.type === 'done') {
+          runBtn.disabled = false;
+          runBtn.textContent = '실행하기 ⏵';
+          if (msg.status === 'error') {
+            updateLineNumbers(msg.error_line || null);
+            const lineInfo = msg.error_line ? ` (${msg.error_line}번 줄)` : '';
+            appendOutput(`\n❌${lineInfo} ${msg.error_msg}`, true);
+          }
         }
+      };
 
-        const data = await res.json();
-        if (!res.ok || data.status === 'error') {
-          const errLine = data.error_line || null;
-          updateLineNumbers(errLine);
-          const lineInfo = errLine ? ` (${errLine}번 줄)` : '';
-          setOutput(`❌${lineInfo} ${data.error_msg || `요청 실패 (${res.status})`}`, true);
-          return;
-        }
-
-        const result = data.result ?? data.stdout ?? '';
-        setOutput(result || '실행은 되었지만 출력이 없습니다.');
-      } catch (err) {
-        setOutput('❌ 요청 중 오류가 발생했습니다:\n\n' + err, true);
-      } finally {
+      ws.onerror = () => {
+        appendOutput('❌ 연결 오류가 발생했습니다.', true);
         runBtn.disabled = false;
-        runBtn.textContent = defaultRunLabel;
-      }
+        runBtn.textContent = '실행하기 ⏵';
+      };
+
+      ws.onclose = () => {
+        if (runBtn.disabled) {
+          runBtn.disabled = false;
+          runBtn.textContent = '실행하기 ⏵';
+        }
+      };
     }
 
+    // ── 이벤트 리스너 ─────────────────────────────────────
     runBtn.addEventListener('click', runCode);
 
-    // 코드 입력/붙여넣기 시 라인 넘버 갱신 (에러 하이라이트 유지)
     editor.addEventListener('input', () => updateLineNumbers(currentErrorLine));
 
-    // 스크롤 동기화
     editor.addEventListener('scroll', () => {
       lineNumbers.scrollTop = editor.scrollTop;
     });
 
-    // 초기 한 번 호출
     updateLineNumbers();
 
     clearBtn.addEventListener('click', () => {
+      if (ws) { ws.close(); ws = null; }
       editor.value = '';
       updateLineNumbers(null);
-      setOutput('출력 영역이 초기화되었습니다.');
+      clearOutput();
     });
 
     exampleSelect.addEventListener('change', (e) => {
@@ -265,13 +286,10 @@
 
     copyOutputBtn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(output.textContent || '');
-      } catch (e) {
-        console.error(e);
-      }
+        await navigator.clipboard.writeText(output.innerText || '');
+      } catch (e) { console.error(e); }
     });
 
-    // Ctrl + Enter로 실행
     editor.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
