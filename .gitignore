@@ -20,3 +20,7 @@ web/__pycache__/
 .eggs/
 build/
 dist/
+
+지시사항.md
+CLAUDE.md
+한글.py
