@@ -2,93 +2,294 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>냥Lang 온라인 실행기</title>
-  <link rel="stylesheet" href="../static/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>냥Lang — Visual Studio Code</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <div class="page">
-    <header class="header">
-      <img class="header-cat-seat" src="/static/images/header-cat.png" alt="" aria-hidden="true" />
-      <div class="logo">
-        <span class="logo-mark">냥</span>
-        <div class="logo-text">
-          <h1>냥Lang 온라인</h1>
-          <p>뇌절 고양이 언어를 브라우저에서 바로 실행해보세요.</p>
-        </div>
-      </div>
-      <div class="header-right">
-        <span class="pill pill-beta">BETA</span>
-      </div>
-    </header>
 
-    <main class="main">
-      <section class="panel panel-editor">
-        <div class="panel-header">
-          <span class="panel-title">코드 편집기</span>
-          <div class="panel-actions">
-            <button id="run-btn" class="btn btn-primary">실행하기 ⏵</button>
-            <button id="clear-btn" class="btn btn-ghost">초기화 ↺</button>
-            <select id="example-select" class="select">
-              <option value="">샘플 코드 불러오기…</option>
-              <option value="hello">[예제] 헬로 월드</option>
-              <option value="loop">[예제] 반복 출력</option>
-              <option value="input">[예제] 입력 / 출력</option>
-            </select>
-          </div>
-        </div>
+<!-- ── Title Bar ────────────────────────────────── -->
+<div class="titlebar">
+  <div class="titlebar-dots">
+    <span class="wc wc-close" title="닫기"></span>
+    <span class="wc wc-min"   title="최소화"></span>
+    <span class="wc wc-max"   title="최대화"></span>
+  </div>
+  <div class="titlebar-center">
+    <span class="titlebar-appname">🐾 냥Lang</span>
+    <span class="titlebar-sep">—</span>
+    <span id="titlebar-filename">main.nyang</span>
+    <span class="titlebar-sep">—</span>
+    <span class="titlebar-sub">Web Playground</span>
+  </div>
+  <div class="titlebar-right"></div>
+</div>
 
-        <div class="editor-wrapper">
-          <div class="editor-shell">
-            <pre id="line-numbers" class="line-numbers">1</pre>
-            <textarea id="code-editor" spellcheck="false" wrap="off"># 여기에 냥Lang 코드를 입력하세요.
-# 예제는 오른쪽 상단 셀렉트 박스에서 선택할 수 있습니다.
-            </textarea>
-          </div>
-        </div>
+<!-- ── Menu Bar ─────────────────────────────────── -->
+<div class="menubar">
+  <span class="menu-item">파일</span>
+  <span class="menu-item">편집</span>
+  <span class="menu-item">선택 영역</span>
+  <span class="menu-item">보기</span>
+  <span class="menu-item menu-active">실행</span>
+  <span class="menu-item">터미널</span>
+  <span class="menu-item">도움말</span>
+</div>
 
+<!-- ── Workbench ─────────────────────────────────── -->
+<div class="workbench">
 
-        <div class="toolbar">
-          <div class="toolbar-left">
-            <span class="shortcut-hint">
-              Ctrl + Enter로도 실행할 수 있습니다.
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel panel-output">
-        <div class="panel-header">
-          <span class="panel-title">출력 콘솔</span>
-          <button id="copy-output-btn" class="btn btn-ghost btn-small">
-            출력 복사
-          </button>
-        </div>
-        <div class="output-wrapper">
-          <pre id="output" class="output"><span class="output-placeholder">여기에 실행 결과가 표시됩니다.
-코드를 작성한 뒤 [실행하기] 버튼을 눌러보세요.
-          </span></pre>
-        </div>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <span>🐾 NyangLang Playground</span>
-      <span class="dot">•</span>
-      <span>백엔드는 FastAPI, 인터프리터는 Python으로 돌아갑니다.</span>
-    </footer>
+  <!-- Activity Bar -->
+  <div class="activitybar">
+    <div class="activity-top">
+      <button class="activity-btn ab-active" title="탐색기">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M1.5 1h5.563l4 4H14.5v9.5a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5V1.5A.5.5 0 0 1 1.5 1zM2 2v12h12V6H7L4 3H2V2z"/>
+        </svg>
+      </button>
+      <button class="activity-btn" title="검색">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zm-.82 4.74a6 6 0 1 1 1.06-1.06L15.2 14.2l-1.06 1.06-3.46-3.52z"/>
+        </svg>
+      </button>
+      <button class="activity-btn" title="소스 제어">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M5 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 5.5A3.5 3.5 0 0 1 5 2a3.5 3.5 0 0 1 .5 6.964V11.5a2 2 0 0 0 2 2h1.036A3.5 3.5 0 1 1 11 14.5v-1.036A3.5 3.5 0 0 1 7.5 10H6.5a3.5 3.5 0 0 1-1.5-.336V8.5zM11 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+        </svg>
+      </button>
+      <button class="activity-btn" title="실행 및 디버그">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2.5 2a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .75.433l9-5.5a.5.5 0 0 0 0-.866l-9-5.5A.5.5 0 0 0 2.5 2z"/>
+        </svg>
+      </button>
+      <button class="activity-btn" title="확장">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M3.5 2A1.5 1.5 0 0 0 2 3.5v1A1.5 1.5 0 0 0 3.5 6h1A1.5 1.5 0 0 0 6 4.5v-1A1.5 1.5 0 0 0 4.5 2h-1zm5 0A1.5 1.5 0 0 0 7 3.5v1A1.5 1.5 0 0 0 8.5 6h1A1.5 1.5 0 0 0 11 4.5v-1A1.5 1.5 0 0 0 9.5 2h-1zm-5 5A1.5 1.5 0 0 0 2 8.5v1A1.5 1.5 0 0 0 3.5 11h1A1.5 1.5 0 0 0 6 9.5v-1A1.5 1.5 0 0 0 4.5 7h-1zm5 0A1.5 1.5 0 0 0 7 8.5v1A1.5 1.5 0 0 0 8.5 11h1A1.5 1.5 0 0 0 11 9.5v-1A1.5 1.5 0 0 0 9.5 7h-1zm-2.5 5A1.5 1.5 0 0 0 4.5 13.5a1.5 1.5 0 0 0 3 0A1.5 1.5 0 0 0 6 12h-1zm5 0A1.5 1.5 0 0 0 9.5 13.5a1.5 1.5 0 0 0 3 0A1.5 1.5 0 0 0 11 12h-1z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="activity-bottom">
+      <button class="activity-btn" title="계정">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm5 5.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-.5C3 11 5.239 9.5 8 9.5s5 1.5 5 3.5v.5z"/>
+        </svg>
+      </button>
+      <button class="activity-btn" title="설정">
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+          <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.474l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <script>
-    const editor = document.getElementById('code-editor');
-    const lineNumbers = document.getElementById('line-numbers');
-    const runBtn = document.getElementById('run-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const output = document.getElementById('output');
-    const exampleSelect = document.getElementById('example-select');
-    const copyOutputBtn = document.getElementById('copy-output-btn');
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">탐색기</div>
+    <div class="sidebar-body">
+      <div class="sidebar-section-title folder-toggle" id="folder-toggle">
+        <span class="folder-arrow" id="folder-arrow">▾</span>
+        <span>NYANG_LANG</span>
+      </div>
+      <div id="sidebar-files" class="folder-contents">
+        <div class="file-item fi-active" data-file="main" data-name="main.nyang">
+          <span class="fi-indent"></span>
+          <span class="fi-icon nyang-icon">🐾</span>
+          <span class="fi-name">main.nyang</span>
+        </div>
+        <div class="file-item" data-file="hello" data-name="hello_world.nyang">
+          <span class="fi-indent"></span>
+          <span class="fi-icon nyang-icon">🐾</span>
+          <span class="fi-name">hello_world.nyang</span>
+        </div>
+        <div class="file-item" data-file="loop" data-name="count.nyang">
+          <span class="fi-indent"></span>
+          <span class="fi-icon nyang-icon">🐾</span>
+          <span class="fi-name">count.nyang</span>
+        </div>
+        <div class="file-item" data-file="input" data-name="input_output.nyang">
+          <span class="fi-indent"></span>
+          <span class="fi-icon nyang-icon">🐾</span>
+          <span class="fi-name">input_output.nyang</span>
+        </div>
+        <div class="file-item" data-file="gugudan" data-name="gugudan.nyang">
+          <span class="fi-indent"></span>
+          <span class="fi-icon nyang-icon">🐾</span>
+          <span class="fi-name">gugudan.nyang</span>
+        </div>
+        <div class="file-item" data-file="gugudan_input" data-name="gugudan_input.nyang">
+          <span class="fi-indent"></span>
+          <span class="fi-icon nyang-icon">🐾</span>
+          <span class="fi-name">gugudan_input.nyang</span>
+        </div>
+      </div>
 
-    const examples = {
-      hello: `# "Hello World!"를 출력하는 코드
+      <div class="sidebar-section-title" style="margin-top:16px">
+        <span class="folder-arrow folded">▸</span>
+        <span>OUTLINE</span>
+      </div>
+    </div>
+
+    <!-- 사이드바 하단 고양이 -->
+    <div class="sidebar-cat-zone">
+      <img class="sidebar-cat" src="/static/images/header-cat-transparent.png" aria-hidden="true" />
+    </div>
+
+    <div class="sidebar-resizer" id="sidebar-resizer"></div>
+  </div>
+
+  <!-- Editor Container -->
+  <div class="editor-container">
+
+    <!-- Tab Bar -->
+    <div class="tabbar">
+      <div class="tab-list">
+        <div class="tab tab-active" id="active-tab">
+          <span class="tab-dot" id="tab-dot"></span>
+          <span class="tab-name" id="tab-filename">main.nyang</span>
+          <span class="tab-close">×</span>
+        </div>
+      </div>
+      <div class="tabbar-toolbar">
+        <button id="run-btn" class="run-btn" title="실행 (Ctrl+Enter)">
+          <img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" />
+          실행
+        </button>
+        <div class="toolbar-divider"></div>
+        <button id="clear-btn" class="toolbar-icon-btn" title="초기화">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 3a5 5 0 1 0 5 5h-1.5A3.5 3.5 0 1 1 8 4.5V3zM8 1v4l2-2-2-2z"/>
+          </svg>
+        </button>
+        <button class="toolbar-icon-btn" title="분할 편집기">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M1 1h14v14H1V1zm7 1H2v12h6V2zm1 0v12h6V2H9z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <span class="bc-segment">NYANG_LANG</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-segment bc-active" id="bc-filename">main.nyang</span>
+    </div>
+
+    <!-- Editor + Panel -->
+    <div class="editor-and-panel" id="editor-and-panel">
+
+      <!-- Editor Pane -->
+      <div class="editor-pane" id="editor-pane">
+        <div class="editor-shell">
+          <div class="gutter">
+            <pre id="line-numbers" class="line-numbers">1</pre>
+          </div>
+          <textarea
+            id="code-editor"
+            spellcheck="false"
+            wrap="off"
+            autocorrect="off"
+            autocapitalize="off"
+            placeholder="# 여기에 냥Lang 코드를 작성하세요."
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Panel Resizer -->
+      <div class="panel-resizer" id="panel-resizer"></div>
+
+      <!-- Terminal Panel -->
+      <div class="terminal-panel" id="terminal-panel">
+        <div class="terminal-header">
+          <div class="terminal-tabs">
+            <button class="terminal-tab tt-active">출력</button>
+            <button class="terminal-tab">문제</button>
+            <button class="terminal-tab">터미널</button>
+          </div>
+          <div class="terminal-actions">
+            <button id="copy-output-btn" class="toolbar-icon-btn" title="출력 복사">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M4 2h8v1H4V2zM2 4h12v1H2V4zM1 6v9h14V6H1zm1 1h12v7H2V7z"/>
+              </svg>
+            </button>
+            <button id="clear-output-btn" class="toolbar-icon-btn" title="출력 지우기">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M10.7 0a.5.5 0 0 1 .354.146l5 5A.5.5 0 0 1 16 5.5V11h-1V6H9.5A.5.5 0 0 1 9 5.5V0h1.7zM10 1v4h4l-4-4zM1 3h7v1H1V3zm0 3h5v1H1V6zm0 3h3v1H1V9zm9.5 3.5a2 2 0 1 1 4 0 2 2 0 0 1-4 0zm2-3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+              </svg>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button id="toggle-panel-btn" class="toolbar-icon-btn" title="패널 닫기">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M11.854 4.146a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708-.708l7-7a.5.5 0 0 1 .708 0z"/>
+                <path d="M4.146 4.146a.5.5 0 0 0 0 .708l7 7a.5.5 0 0 0 .708-.708l-7-7a.5.5 0 0 0-.708 0z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="terminal-body">
+          <pre id="output" class="terminal-output"><span class="output-placeholder"> 냥Lang Playground 출력 터미널
+ ─────────────────────────────────
+ 왼쪽 탐색기에서 예제 파일을 선택하거나
+ 코드를 작성 후 ▶ 실행 버튼을 눌러보세요.
+ 단축키: Ctrl+Enter
+</span></pre>
+        </div>
+      </div>
+
+    </div><!-- /editor-and-panel -->
+  </div><!-- /editor-container -->
+
+</div><!-- /workbench -->
+
+<!-- ── Status Bar ────────────────────────────────── -->
+<div class="statusbar">
+  <div class="sb-left">
+    <span class="sb-item sb-git">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:middle;margin-right:4px">
+        <path d="M6 3.5a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0zM8 1a2.5 2.5 0 0 0 0 5 2.5 2.5 0 0 0 0-5zM6 9.5a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0zM8 7a2.5 2.5 0 0 0 0 5 2.5 2.5 0 0 0 0-5zM3 8h2v1H3V8zM11 8h2v1h-2V8z"/>
+      </svg>
+      main
+    </span>
+    <span class="sb-item" id="sb-errors">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:middle;margin-right:3px"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/></svg>0
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:middle;margin-left:8px;margin-right:3px"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>0
+    </span>
+  </div>
+  <div class="sb-right">
+    <span class="sb-item" id="cursor-pos">Ln 1, Col 1</span>
+    <span class="sb-item">UTF-8</span>
+    <span class="sb-item">LF</span>
+    <span class="sb-item sb-lang">냥Lang</span>
+    <span class="sb-item sb-brand">🐾 NyangLang v1.0</span>
+  </div>
+</div>
+
+<script>
+// ── DOM refs ───────────────────────────────────────────────────────
+const editor        = document.getElementById('code-editor');
+const lineNumbers   = document.getElementById('line-numbers');
+const runBtn        = document.getElementById('run-btn');
+const clearBtn      = document.getElementById('clear-btn');
+const clearOutputBtn= document.getElementById('clear-output-btn');
+const output        = document.getElementById('output');
+const copyOutputBtn = document.getElementById('copy-output-btn');
+const togglePanelBtn= document.getElementById('toggle-panel-btn');
+const tabFilename   = document.getElementById('tab-filename');
+const titlebarFile  = document.getElementById('titlebar-filename');
+const bcFilename    = document.getElementById('bc-filename');
+const tabDot        = document.getElementById('tab-dot');
+const cursorPos     = document.getElementById('cursor-pos');
+const terminalPanel = document.getElementById('terminal-panel');
+const editorPane    = document.getElementById('editor-pane');
+
+// ── Examples ───────────────────────────────────────────────────────
+const examples = {
+  main: '',
+  hello: `# "Hello World!"를 출력하는 코드
 # H: 72
 ..........~야옹 .......~야옹
 냐냐냐냐~야옹 냥~~야옹 냥~야옹 ..~야옹 냐냐~야옹 냥~~야옹
@@ -134,168 +335,322 @@
 # !: 33
 ...~야옹 ...........~야옹 냐냐냐냐~야옹 냥~~야옹
 냥!!??야옹`,
-      loop: `냥.야옹 냥냥.....야옹
+
+  loop: `냥.야옹 냥냥.....야옹
 냥!?야옹 냥~야옹 .~야옹 냐냐~야옹 냥~~야옹
 냥냥~야옹 ,~야옹 냐냐~야옹 냥냥~~야옹
 냥냥?..야옹`,
-      input: `냥??야옹 냥!?야옹`
-    };
 
-    let currentErrorLine = null;
-    let ws = null;
+  input: `냥??야옹 냥!?야옹`,
 
-    // ── 라인 번호 ──────────────────────────────────────────
-    function updateLineNumbers(errorLine = null) {
-      currentErrorLine = errorLine;
-      const lines = (editor.value || '').split('\n').length || 1;
-      let buf = '';
-      for (let i = 1; i <= lines; i++) {
-        buf += i === errorLine
-          ? `<span style="color:#ef4444;font-weight:bold">${i}</span>\n`
-          : i + '\n';
+  gugudan: `# 구구단 (2단 ~ 9단)
+# 변수1: i (단), 변수2: j, 변수3: i*j 결과, 변수4: 루프 조건
+
+냥..야옹                                              # (1)  i = 2
+냥냥.야옹                                             # (2)  j = 1  ← 내부 루프 시작
+냥~야옹 냥냥~야옹 냐냐냐냐~야옹 냥냥냥~~야옹          # (3)  변수3 = i * j
+냥냥냥!???야옹                                         # (4)  결과 출력 (공백 구분)
+냥냥~야옹 .~야옹 냐냐~야옹 냥냥~~야옹                 # (5)  j = j + 1
+냥냥~야옹 ..........~야옹 냐냐냐~야옹 냥냥냥냥~~야옹  # (6)  변수4 = j - 10
+냥냥냥냥?...야옹                                       # (7)  변수4 ≠ 0 (j ≠ 10) 이면 line 3
+..........!!??야옹                                     # (8)  줄바꿈 출력 (chr(10))
+냥~야옹 .~야옹 냐냐~야옹 냥~~야옹                     # (9)  i = i + 1
+냥~야옹 ..........~야옹 냐냐냐~야옹 냥냥냥냥~~야옹    # (10) 변수4 = i - 10
+냥냥냥냥?..야옹                                        # (11) 변수4 ≠ 0 (i ≠ 10) 이면 line 2`,
+
+  gugudan_input: `냥??야옹
+냥냥.야옹
+
+......~야옹 .......~야옹 냐냐냐냐~야옹 냥냥냥~~야옹
+......~야옹 ..........~야옹 냐냐냐냐~야옹 냥냥냥냥~~야옹 냥냥냥냥~야옹 .~야옹 냐냐~야옹 냥냥냥냥~~야옹
+냥~야옹 냥냥~야옹 냐냐냐냐~야옹 냥냥냥냥냥~~야옹
+냥!???야옹 냥냥냥!!???야옹 냥냥!???야옹 냥냥냥냥!!???야옹 냥냥냥냥냥!?야옹
+냥냥~야옹 .~야옹 냐냐~야옹 냥냥~~야옹 냥냥~야옹 ..........~야옹 냐냐냐~야옹 냥냥냥냥냥냥~~야옹
+냥냥냥냥냥냥?....야옹`
+};
+
+// ── State ──────────────────────────────────────────────────────────
+let currentErrorLine = null;
+let ws = null;
+let isDirty = false;
+
+// ── Line numbers ───────────────────────────────────────────────────
+function updateLineNumbers(errorLine = null) {
+  currentErrorLine = errorLine;
+  const lines = (editor.value || '').split('\n').length || 1;
+  let buf = '';
+  for (let i = 1; i <= lines; i++) {
+    buf += i === errorLine
+      ? `<span class="ln-error">${i}</span>\n`
+      : i + '\n';
+  }
+  lineNumbers.innerHTML = buf;
+  if (errorLine) {
+    const lh = parseFloat(getComputedStyle(editor).lineHeight);
+    editor.scrollTop = Math.max(0, (errorLine - 1) * lh - editor.clientHeight / 3);
+    lineNumbers.scrollTop = editor.scrollTop;
+  }
+}
+
+// ── Dirty indicator ────────────────────────────────────────────────
+function setDirty(val) {
+  isDirty = val;
+  tabDot.classList.toggle('dot-visible', val);
+}
+
+// ── Cursor position ────────────────────────────────────────────────
+function updateCursorPos() {
+  const pos = editor.selectionStart;
+  const text = editor.value.substring(0, pos);
+  const lines = text.split('\n');
+  const ln = lines.length;
+  const col = lines[lines.length - 1].length + 1;
+  cursorPos.textContent = `Ln ${ln}, Col ${col}`;
+}
+
+// ── Output helpers ─────────────────────────────────────────────────
+function clearOutput() {
+  output.innerHTML = '';
+}
+
+function appendOutput(text, isError = false) {
+  const span = document.createElement('span');
+  span.textContent = text;
+  if (isError) span.classList.add('out-error');
+  output.appendChild(span);
+  output.scrollTop = output.scrollHeight;
+}
+
+// ── Terminal input prompt ──────────────────────────────────────────
+function showInputPrompt(prompt) {
+  const line = document.createElement('span');
+  line.className = 'terminal-input-line';
+
+  const promptSpan = document.createElement('span');
+  promptSpan.className = 'terminal-prompt';
+  promptSpan.textContent = prompt;
+
+  const inputEl = document.createElement('input');
+  inputEl.type = 'text';
+  inputEl.className = 'terminal-input';
+
+  line.appendChild(promptSpan);
+  line.appendChild(inputEl);
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+  setTimeout(() => inputEl.focus(), 0);
+
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const value = inputEl.value;
+    const staticSpan = document.createElement('span');
+    staticSpan.textContent = prompt + value + '\n';
+    line.replaceWith(staticSpan);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'input', value }));
+    }
+  });
+}
+
+// ── Run ────────────────────────────────────────────────────────────
+function runCode() {
+  const code = editor.value;
+  if (!code.trim()) {
+    clearOutput();
+    appendOutput('⚠  코드가 비어 있습니다. 무언가를 작성해 주세요.\n', true);
+    return;
+  }
+
+  if (ws) { ws.close(); ws = null; }
+
+  clearOutput();
+  updateLineNumbers(null);
+  runBtn.disabled = true;
+  runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw run-paw-spin" aria-hidden="true" /> 실행 중…`;
+
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${protocol}//${location.host}/ws/run`);
+
+  ws.onopen = () => ws.send(JSON.stringify({ code }));
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'output') {
+      appendOutput(msg.data);
+    } else if (msg.type === 'input_request') {
+      showInputPrompt(msg.prompt);
+    } else if (msg.type === 'done') {
+      runBtn.disabled = false;
+      runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" /> 실행`;
+      if (msg.status === 'error') {
+        updateLineNumbers(msg.error_line || null);
+        const lineInfo = msg.error_line ? ` (${msg.error_line}번 줄)` : '';
+        appendOutput(`\n❌${lineInfo} ${msg.error_msg}\n`, true);
+      } else {
+        appendOutput('\n\n─── 실행 완료 ───\n', false);
       }
-      lineNumbers.innerHTML = buf;
-      if (errorLine) {
-        const lh = parseFloat(getComputedStyle(editor).lineHeight);
-        editor.scrollTop = Math.max(0, (errorLine - 1) * lh - editor.clientHeight / 3);
-        lineNumbers.scrollTop = editor.scrollTop;
-      }
     }
+  };
 
-    // ── 출력창 ────────────────────────────────────────────
-    function clearOutput() {
-      output.innerHTML = '';
-      output.classList.remove('output-error');
+  ws.onerror = () => {
+    appendOutput('❌  연결 오류가 발생했습니다.\n', true);
+    runBtn.disabled = false;
+    runBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 2a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .75.433l9-5.5a.5.5 0 0 0 0-.866l-9-5.5A.5.5 0 0 0 2.5 2z"/></svg> 실행`;
+  };
+
+  ws.onclose = () => {
+    if (runBtn.disabled) {
+      runBtn.disabled = false;
+      runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" /> 실행`;
     }
+  };
+}
 
-    function appendOutput(text, isError = false) {
-      const span = document.createElement('span');
-      span.textContent = text;
-      if (isError) span.style.color = 'var(--error)';
-      output.appendChild(span);
-      output.scrollTop = output.scrollHeight;
-    }
+// ── Folder toggle ──────────────────────────────────────────────
+const folderToggle   = document.getElementById('folder-toggle');
+const folderArrow    = document.getElementById('folder-arrow');
+const folderContents = document.getElementById('sidebar-files');
+let folderOpen = true;
 
-    // ── 터미널 입력 프롬프트 ──────────────────────────────
-    function showInputPrompt(prompt) {
-      const line = document.createElement('span');
-      line.className = 'terminal-input-line';
+folderToggle.addEventListener('click', () => {
+  folderOpen = !folderOpen;
+  folderContents.classList.toggle('folder-collapsed', !folderOpen);
+  folderArrow.textContent = folderOpen ? '▾' : '▸';
+});
 
-      const promptSpan = document.createElement('span');
-      promptSpan.className = 'terminal-prompt';
-      promptSpan.textContent = prompt;
+// ── Sidebar file click ─────────────────────────────────────────────
+document.getElementById('sidebar-files').addEventListener('click', (e) => {
+  const item = e.target.closest('.file-item');
+  if (!item) return;
 
-      const inputEl = document.createElement('input');
-      inputEl.type = 'text';
-      inputEl.className = 'terminal-input';
+  document.querySelectorAll('.file-item').forEach(f => f.classList.remove('fi-active'));
+  item.classList.add('fi-active');
 
-      line.appendChild(promptSpan);
-      line.appendChild(inputEl);
-      output.appendChild(line);
-      output.scrollTop = output.scrollHeight;
-      setTimeout(() => inputEl.focus(), 0);
+  const fileKey  = item.dataset.file;
+  const filename = item.dataset.name;
 
-      inputEl.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter') return;
-        const value = inputEl.value;
-        const staticSpan = document.createElement('span');
-        staticSpan.textContent = prompt + value + '\n';
-        line.replaceWith(staticSpan);
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'input', value }));
-        }
-      });
-    }
+  tabFilename.textContent   = filename;
+  titlebarFile.textContent  = filename;
+  bcFilename.textContent    = filename;
 
-    // ── 실행 ──────────────────────────────────────────────
-    function runCode() {
-      const code = editor.value;
-      if (!code.trim()) {
-        clearOutput();
-        appendOutput('⚠ 코드가 비어 있습니다. 무언가를 적어 주세요!', true);
-        return;
-      }
+  editor.value = examples[fileKey] || '';
+  updateLineNumbers();
+  setDirty(false);
+  clearOutput();
+  updateCursorPos();
+});
 
-      if (ws) { ws.close(); ws = null; }
+// ── Panel resize ───────────────────────────────────────────────────
+const panelResizer = document.getElementById('panel-resizer');
+let isResizingPanel = false;
+let resizeStartY    = 0;
+let resizeStartH    = 0;
 
-      clearOutput();
-      updateLineNumbers(null);
-      runBtn.disabled = true;
-      runBtn.textContent = '실행 중...';
+panelResizer.addEventListener('mousedown', (e) => {
+  isResizingPanel = true;
+  resizeStartY    = e.clientY;
+  resizeStartH    = terminalPanel.getBoundingClientRect().height;
+  document.body.classList.add('resizing-v');
+});
 
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${location.host}/ws/run`);
+document.addEventListener('mousemove', (e) => {
+  if (!isResizingPanel) return;
+  const dy = resizeStartY - e.clientY;
+  const newH = Math.max(60, Math.min(resizeStartH + dy, window.innerHeight * 0.75));
+  terminalPanel.style.height = newH + 'px';
+});
 
-      ws.onopen = () => ws.send(JSON.stringify({ code }));
+document.addEventListener('mouseup', () => {
+  isResizingPanel = false;
+  document.body.classList.remove('resizing-v');
+});
 
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'output') {
-          appendOutput(msg.data);
-        } else if (msg.type === 'input_request') {
-          showInputPrompt(msg.prompt);
-        } else if (msg.type === 'done') {
-          runBtn.disabled = false;
-          runBtn.textContent = '실행하기 ⏵';
-          if (msg.status === 'error') {
-            updateLineNumbers(msg.error_line || null);
-            const lineInfo = msg.error_line ? ` (${msg.error_line}번 줄)` : '';
-            appendOutput(`\n❌${lineInfo} ${msg.error_msg}`, true);
-          }
-        }
-      };
+// ── Sidebar resize ─────────────────────────────────────────────────
+const sidebarResizer = document.getElementById('sidebar-resizer');
+const sidebar        = document.getElementById('sidebar');
+let isResizingSidebar = false;
+let sbStartX  = 0;
+let sbStartW  = 0;
 
-      ws.onerror = () => {
-        appendOutput('❌ 연결 오류가 발생했습니다.', true);
-        runBtn.disabled = false;
-        runBtn.textContent = '실행하기 ⏵';
-      };
+sidebarResizer.addEventListener('mousedown', (e) => {
+  isResizingSidebar = true;
+  sbStartX = e.clientX;
+  sbStartW = sidebar.getBoundingClientRect().width;
+  document.body.classList.add('resizing-h');
+});
 
-      ws.onclose = () => {
-        if (runBtn.disabled) {
-          runBtn.disabled = false;
-          runBtn.textContent = '실행하기 ⏵';
-        }
-      };
-    }
+document.addEventListener('mousemove', (e) => {
+  if (!isResizingSidebar) return;
+  const dx  = e.clientX - sbStartX;
+  const newW = Math.max(120, Math.min(sbStartW + dx, 500));
+  sidebar.style.width = newW + 'px';
+});
 
-    // ── 이벤트 리스너 ─────────────────────────────────────
-    runBtn.addEventListener('click', runCode);
+document.addEventListener('mouseup', () => {
+  isResizingSidebar = false;
+  document.body.classList.remove('resizing-h');
+});
 
-    editor.addEventListener('input', () => updateLineNumbers(currentErrorLine));
+// ── Toggle panel ───────────────────────────────────────────────────
+let panelVisible = true;
+togglePanelBtn.addEventListener('click', () => {
+  panelVisible = !panelVisible;
+  terminalPanel.style.display  = panelVisible ? '' : 'none';
+  panelResizer.style.display   = panelVisible ? '' : 'none';
+});
 
-    editor.addEventListener('scroll', () => {
-      lineNumbers.scrollTop = editor.scrollTop;
-    });
+// ── Editor events ──────────────────────────────────────────────────
+editor.addEventListener('input', () => {
+  updateLineNumbers(currentErrorLine);
+  setDirty(true);
+  updateCursorPos();
+});
 
-    updateLineNumbers();
+editor.addEventListener('scroll', () => {
+  lineNumbers.scrollTop = editor.scrollTop;
+});
 
-    clearBtn.addEventListener('click', () => {
-      if (ws) { ws.close(); ws = null; }
-      editor.value = '';
-      updateLineNumbers(null);
-      clearOutput();
-    });
+editor.addEventListener('click', updateCursorPos);
+editor.addEventListener('keyup', updateCursorPos);
 
-    exampleSelect.addEventListener('change', (e) => {
-      const key = e.target.value;
-      if (!key) return;
-      editor.value = examples[key] || '';
-      updateLineNumbers();
-    });
+editor.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    runCode();
+  }
+  // Tab key → insert 2 spaces
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const start = editor.selectionStart;
+    const end   = editor.selectionEnd;
+    editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+    editor.selectionStart = editor.selectionEnd = start + 2;
+    updateLineNumbers(currentErrorLine);
+  }
+});
 
-    copyOutputBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(output.innerText || '');
-      } catch (e) { console.error(e); }
-    });
+// ── Button events ──────────────────────────────────────────────────
+runBtn.addEventListener('click', runCode);
 
-    editor.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        runCode();
-      }
-    });
-  </script>
+clearBtn.addEventListener('click', () => {
+  if (ws) { ws.close(); ws = null; }
+  editor.value = '';
+  updateLineNumbers(null);
+  setDirty(false);
+  clearOutput();
+  updateCursorPos();
+});
+
+clearOutputBtn.addEventListener('click', clearOutput);
+
+copyOutputBtn.addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(output.innerText || ''); }
+  catch (err) { console.error(err); }
+});
+
+// ── Init ───────────────────────────────────────────────────────────
+updateLineNumbers();
+updateCursorPos();
+</script>
 </body>
 </html>
