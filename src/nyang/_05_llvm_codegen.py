@@ -255,10 +255,18 @@ class LLVMCodeGen:
     def emit_ir(self) -> str:
         return str(self.module)
 
-    def emit_object(self) -> bytes:
+    def _get_machine(self):
         target  = binding.Target.from_default_triple()
         machine = target.create_target_machine()
         self.module.data_layout = machine.target_data
-        mod = binding.parse_assembly(str(self.module))
+        return machine, binding.parse_assembly(str(self.module))
+
+    def emit_asm(self) -> str:
+        machine, mod = self._get_machine()
+        mod.verify()
+        return machine.emit_assembly(mod)
+
+    def emit_object(self) -> bytes:
+        machine, mod = self._get_machine()
         mod.verify()
         return machine.emit_object(mod)
