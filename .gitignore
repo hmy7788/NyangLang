@@ -24,4 +24,10 @@ dist/
 지시사항.md
 CLAUDE.md
 한글.py
-프로젝트_소개.
+프로젝트_소개.md
+.claude
+GEMINI.md
+
+*.exe
+*.o
+examples/test_simple.nyang
