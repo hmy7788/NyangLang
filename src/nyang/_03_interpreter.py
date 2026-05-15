@@ -188,63 +188,74 @@ class CommandExecMixin:
             self.write("===========================")
         
 
-    # 11. 
+    # 11.
     def _exec_array_decl(self: "Interpreter", cmd: Command):
         array_id = cmd.array_id
 
         if cmd.array_decl_mode == 0:
             array_length = cmd.array_length
-
         elif cmd.array_decl_mode == 1:
-            try:
-                array_length = self.variables_table[cmd.array_length]
-            except KeyError:
-                KeyError(f"변수{cmd.array_length}가 정의되지 않았습니다.")
+            if cmd.array_length not in self.variables_table:
+                raise KeyError(f"변수{cmd.array_length}가 정의되지 않았습니다.")
+            array_length = self.variables_table[cmd.array_length]
         else:
             raise RuntimeError("알 수 없는 array_decl_mode")
 
-        array = [0 for _ in range(array_length)]
-        self.array_table[array_id] = array
+        self.array_table[array_id] = [0] * array_length
 
 
-    # 12. 
+    # 12.
     def _exec_array_write(self: "Interpreter", cmd: Command):
-        array_id = cmd.array_id
+        array = self.array_table.get(cmd.array_id)
+        if array is None:
+            raise KeyError(f"배열{cmd.array_id}가 정의되지 않았습니다.")
 
-        try:
-            array = self.array_table[array_id]
-        except KeyError:
-            raise KeyError(f"배열{array_id}가 정의되지 않았습니다.")
+        # 인덱스 결정
+        if cmd.array_write_mode in (0, 1):  # int idx
+            idx = cmd.array_idx
+        else:                                # nyang idx (mode 2, 3)
+            if cmd.array_idx not in self.variables_table:
+                raise KeyError(f"변수{cmd.array_idx}가 정의되지 않았습니다.")
+            idx = self.variables_table[cmd.array_idx]
 
-        if cmd.array_write_mode == 0:
-            array_idx = cmd.array_idx
-            value = cmd.int_value
+        # 값 결정
+        if cmd.array_write_mode in (0, 2):  # int val
+            val = cmd.int_value
+        else:                                # nyang val (mode 1, 3)
+            if cmd.int_value not in self.variables_table:
+                raise KeyError(f"변수{cmd.int_value}가 정의되지 않았습니다.")
+            val = self.variables_table[cmd.int_value]
 
-        elif cmd.array_write_mode == 1:
-            array_idx = cmd.array_idx
-            try:
-                value = self.variables_table[cmd.int_value]
-            except KeyError:
-                raise KeyError(f"변수{cmd.int_value}")
-            
-            try:
-                pass
-            except:
-                pass
-                
-        elif cmd.array_write_mode == 2:
-            pass
-
-        elif cmd.array_write_mode == 3:
-            pass
-
-        else:
-            raise
+        if not (0 <= idx < len(array)):
+            raise IndexError(f"배열{cmd.array_id}의 인덱스 {idx}가 범위를 벗어났습니다.")
+        array[idx] = val
 
 
-    # 13. 
+    # 13.
     def _exec_array_read(self: "Interpreter", cmd: Command):
-        pass
+        array = self.array_table.get(cmd.array_id)
+        if array is None:
+            raise KeyError(f"배열{cmd.array_id}가 정의되지 않았습니다.")
+
+        # 인덱스 결정
+        if cmd.array_read_mode in (0, 1):  # int idx
+            idx = cmd.array_idx
+        else:                               # nyang idx (mode 2, 3)
+            if cmd.array_idx not in self.variables_table:
+                raise KeyError(f"변수{cmd.array_idx}가 정의되지 않았습니다.")
+            idx = self.variables_table[cmd.array_idx]
+
+        if not (0 <= idx < len(array)):
+            raise IndexError(f"배열{cmd.array_id}의 인덱스 {idx}가 범위를 벗어났습니다.")
+
+        val = array[idx]
+
+        # 목적지 결정
+        if cmd.array_read_mode in (0, 2):  # 스택에 push
+            self.stack.append(val)
+            self.stack_top = val
+        else:                               # 변수에 대입 (mode 1, 3)
+            self.variables_table[cmd.nyang_id] = val
 
 
 @dataclass

@@ -148,7 +148,65 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
             raise SyntaxError(f'물음표 개수때문에 ~ 물음표 개수: {question_token.value}')
         
     elif next_token.type == TokenType.BANG:
-        # <NYANG><!>
+        # BANG(1)만 배열 ops 후보; BANG(2)는 항상 ascii OUTPUT
+        if next_token.value == 1:
+            after_bang = token_stream.peek_offset(1)  # BANG 다음 토큰
+
+            # <NYANG>!<INT/NYANG> → ARRAY_DECL 또는 ARRAY_WRITE
+            if after_bang is not None and after_bang.type in (TokenType.INT, TokenType.NYANG):
+                token_stream.consume()                       # BANG 소비
+                idx_or_len_token = token_stream.consume()   # INT 또는 NYANG 소비
+                nxt = token_stream.peek()
+
+                if nxt is not None and nxt.type == TokenType.BANG:
+                    # <NYANG>!<INT/NYANG>!<INT/NYANG> → ARRAY_WRITE
+                    token_stream.consume_value(TokenType.BANG, 1)
+                    val_token = token_stream.consume()
+                    mode = (0 if idx_or_len_token.type == TokenType.INT else 2) + \
+                           (0 if val_token.type == TokenType.INT else 1)
+                    return Command(CommandKind.ARRAY_WRITE,
+                                   array_id=nyang_token.value,
+                                   array_idx=idx_or_len_token.value,
+                                   int_value=val_token.value,
+                                   array_write_mode=mode)
+                else:
+                    # <NYANG>!<INT/NYANG> → ARRAY_DECL
+                    mode = 0 if idx_or_len_token.type == TokenType.INT else 1
+                    return Command(CommandKind.ARRAY_DECL,
+                                   array_id=nyang_token.value,
+                                   array_length=idx_or_len_token.value,
+                                   array_decl_mode=mode)
+
+            # <NYANG>!?<INT/NYANG>... → ARRAY_READ
+            elif (after_bang is not None and
+                  after_bang.type == TokenType.QUESTION and after_bang.value == 1 and
+                  token_stream.peek_offset(2) is not None and
+                  token_stream.peek_offset(2).type in (TokenType.INT, TokenType.NYANG)):
+                token_stream.consume()                              # BANG 소비
+                token_stream.consume_value(TokenType.QUESTION, 1)  # ? 소비
+                idx_token = token_stream.consume()                  # INT 또는 NYANG 소비
+                token_stream.consume_value(TokenType.BANG, 1)      # ! 소비
+                token_stream.consume_value(TokenType.QUESTION, 1)  # ? 소비
+                dest = token_stream.peek()
+                if dest is not None and dest.type == TokenType.TILDE:
+                    token_stream.consume_value(TokenType.TILDE, 1)
+                    mode = 0 if idx_token.type == TokenType.INT else 2
+                    return Command(CommandKind.ARRAY_READ,
+                                   array_id=nyang_token.value,
+                                   array_idx=idx_token.value,
+                                   array_read_mode=mode)
+                elif dest is not None and dest.type == TokenType.NYANG:
+                    dest_token = token_stream.consume()
+                    mode = 1 if idx_token.type == TokenType.INT else 3
+                    return Command(CommandKind.ARRAY_READ,
+                                   array_id=nyang_token.value,
+                                   array_idx=idx_token.value,
+                                   nyang_id=dest_token.value,
+                                   array_read_mode=mode)
+                else:
+                    raise SyntaxError("ARRAY_READ: !?<인덱스>!? 뒤에 ~ 또는 변수가 와야 합니다.")
+
+        # 기존 OUTPUT 처리 (BANG(1) decimal 또는 BANG(2) ascii)
         bang_token = next_token
         output_form = None
 
@@ -165,9 +223,9 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
         if next_token is None:
             raise SyntaxError()
 
+        output_mode = None
         if next_token.type == TokenType.QUESTION:
             question_token = next_token
-            output_mode = None
 
             # <NYANG><!>?
             if question_token.value == 1: output_mode = 'newline'
