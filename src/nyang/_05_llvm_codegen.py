@@ -28,6 +28,8 @@ class LLVMCodeGen:
         self.stack_arr: ir.AllocaInstr | None = None     # int stack[256]
         self.stack_sp: ir.AllocaInstr | None = None      # 스택 포인터
 
+        self.arrays: dict[int, ir.GlobalVariable] = {}      # array_id → [N x i32] global
+
         self.printf_fn: ir.Function | None = None
         self.scanf_fn: ir.Function | None = None
         self._fmt_cache: dict[str, ir.GlobalVariable] = {}
@@ -105,8 +107,35 @@ class LLVMCodeGen:
                     used_ids.add(cmd.jump_line)
                 if cmd.jump_kind in ("nyang?int", "nyang?nyang") and cmd.condition is not None:
                     used_ids.add(cmd.condition)
+                # 배열 명령에서 변수로 쓰이는 ID
+                if cmd.kind == CommandKind.ARRAY_WRITE:
+                    if cmd.array_write_mode in (2, 3):
+                        used_ids.add(cmd.array_idx)
+                    if cmd.array_write_mode in (1, 3):
+                        used_ids.add(cmd.int_value)
+                elif cmd.kind == CommandKind.ARRAY_READ:
+                    if cmd.array_read_mode in (2, 3):
+                        used_ids.add(cmd.array_idx)
+                elif cmd.kind == CommandKind.ARRAY_INPUT:
+                    if cmd.array_write_mode == 1:
+                        used_ids.add(cmd.array_idx)
+                elif cmd.kind == CommandKind.ARRAY_DECL and cmd.array_decl_mode == 1:
+                    used_ids.add(cmd.array_length)
         for nyang_id in sorted(used_ids):
             self.variables[nyang_id] = self.builder.alloca(i32, name=f"var{nyang_id}")
+
+    def _pre_alloc_arrays(self, all_commands: list[list[Command]]) -> None:
+        """ARRAY_DECL 명령을 스캔해 LLVM 전역 배열 변수 생성"""
+        for cmds in all_commands:
+            for cmd in cmds:
+                if cmd.kind == CommandKind.ARRAY_DECL:
+                    if cmd.array_decl_mode == 1:
+                        raise NotImplementedError("가변 길이 배열은 LLVM 컴파일 미지원 (인터프리터 사용)")
+                    if cmd.array_id not in self.arrays:
+                        arr_ty = ir.ArrayType(i32, cmd.array_length)
+                        gv = ir.GlobalVariable(self.module, arr_ty, name=f"arr{cmd.array_id}")
+                        gv.initializer = ir.Constant(arr_ty, [0] * cmd.array_length)
+                        self.arrays[cmd.array_id] = gv
 
     # ── 개별 명령 IR 생성 ─────────────────────────────────────────────────
 
@@ -135,6 +164,38 @@ class LLVMCodeGen:
         elif op == 6: result = self.builder.srem(a, b, name="mod")
         else: return
         self._stack_push(result)
+
+    def _get_array_elem_ptr(self, array_id: int, idx_val: ir.Value) -> ir.Value:
+        gv = self.arrays[array_id]
+        idx64 = self.builder.sext(idx_val, i64, name="idx64")
+        return self.builder.gep(gv, [ir.Constant(i64, 0), idx64], inbounds=True, name="elem")
+
+    def _emit_array_decl(self, cmd: Command) -> None:
+        pass  # 전역 변수는 _pre_alloc_arrays에서 이미 생성됨
+
+    def _emit_array_write(self, cmd: Command) -> None:
+        mode = cmd.array_write_mode
+        idx = (ir.Constant(i32, cmd.array_idx) if mode in (0, 1)
+               else self.builder.load(self._get_var(cmd.array_idx), name="idx"))
+        val = (ir.Constant(i32, cmd.int_value) if mode in (0, 2)
+               else self.builder.load(self._get_var(cmd.int_value), name="val"))
+        self.builder.store(val, self._get_array_elem_ptr(cmd.array_id, idx))
+
+    def _emit_array_read(self, cmd: Command) -> None:
+        mode = cmd.array_read_mode
+        idx = (ir.Constant(i32, cmd.array_idx) if mode in (0, 1)
+               else self.builder.load(self._get_var(cmd.array_idx), name="idx"))
+        val = self.builder.load(self._get_array_elem_ptr(cmd.array_id, idx), name="elem")
+        if mode in (0, 2):
+            self._stack_push(val)
+        else:
+            self.builder.store(val, self._get_var(cmd.nyang_id))
+
+    def _emit_array_input(self, cmd: Command) -> None:
+        idx = (ir.Constant(i32, cmd.array_idx) if cmd.array_write_mode == 0
+               else self.builder.load(self._get_var(cmd.array_idx), name="idx"))
+        ptr = self._get_array_elem_ptr(cmd.array_id, idx)
+        self.builder.call(self.scanf_fn, [self._fmt_ptr("%d"), ptr])
 
     def _emit_input(self, cmd: Command) -> None:
         fmt = self._fmt_ptr("%d")
@@ -204,6 +265,10 @@ class LLVMCodeGen:
             CommandKind.OPERATION:  self._emit_operation,
             CommandKind.INPUT:      self._emit_input,
             CommandKind.OUTPUT:     self._emit_output,
+            CommandKind.ARRAY_DECL:  self._emit_array_decl,
+            CommandKind.ARRAY_WRITE: self._emit_array_write,
+            CommandKind.ARRAY_READ:  self._emit_array_read,
+            CommandKind.ARRAY_INPUT: self._emit_array_input,
         }
         handler = dispatch.get(cmd.kind)
         if handler:
@@ -220,8 +285,9 @@ class LLVMCodeGen:
 
         n = len(all_commands)
 
-        # entry 블록: 변수 pre-alloc
+        # entry 블록: 변수/배열 pre-alloc
         self._pre_alloc_vars(all_commands)
+        self._pre_alloc_arrays(all_commands)
 
         # 라인별 basic block + exit block 생성
         line_blocks = [self.main_fn.append_basic_block(f"line_{i}") for i in range(n)]
