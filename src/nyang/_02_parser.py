@@ -169,6 +169,14 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
                                    array_idx=idx_or_len_token.value,
                                    int_value=val_token.value,
                                    array_write_mode=mode)
+                elif nxt is not None and nxt.type == TokenType.QUESTION and nxt.value == 2:
+                    # <NYANG>!<INT/NYANG>?? → ARRAY_INPUT
+                    token_stream.consume()  # ?? 소비
+                    mode = 0 if idx_or_len_token.type == TokenType.INT else 1
+                    return Command(CommandKind.ARRAY_INPUT,
+                                   array_id=nyang_token.value,
+                                   array_idx=idx_or_len_token.value,
+                                   array_write_mode=mode)
                 else:
                     # <NYANG>!<INT/NYANG> → ARRAY_DECL
                     mode = 0 if idx_or_len_token.type == TokenType.INT else 1

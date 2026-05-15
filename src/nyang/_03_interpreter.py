@@ -258,6 +258,30 @@ class CommandExecMixin:
             self.variables_table[cmd.nyang_id] = val
 
 
+    # 14.
+    def _exec_array_input(self: "Interpreter", cmd: Command):
+        array = self.array_table.get(cmd.array_id)
+        if array is None:
+            raise KeyError(f"배열{cmd.array_id}가 정의되지 않았습니다.")
+
+        # 인덱스 결정
+        if cmd.array_write_mode == 0:  # int idx
+            idx = cmd.array_idx
+        else:                           # nyang idx (mode 1)
+            if cmd.array_idx not in self.variables_table:
+                raise KeyError(f"변수{cmd.array_idx}가 정의되지 않았습니다.")
+            idx = self.variables_table[cmd.array_idx]
+
+        if not (0 <= idx < len(array)):
+            raise IndexError(f"배열{cmd.array_id}의 인덱스 {idx}가 범위를 벗어났습니다.")
+
+        try:
+            raw = self.input_func(f"배열{cmd.array_id} {idx}번 인덱스 입력 > ")
+            array[idx] = int(str(raw).rstrip())
+        except ValueError:
+            raise ValueError("정수만 입력할 수 있습니다.")
+
+
 @dataclass
 class Interpreter(CommandExecMixin):
     variables_table: Dict[int, int] = field(default_factory=dict)
@@ -378,6 +402,10 @@ class Interpreter(CommandExecMixin):
         
         elif kind == CommandKind.ARRAY_READ:
             self._exec_array_read(cmd)
+            return pc + 1
+
+        elif kind == CommandKind.ARRAY_INPUT:
+            self._exec_array_input(cmd)
             return pc + 1
 
         else:

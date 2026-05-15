@@ -35,8 +35,9 @@ class CommandKind(Enum):
     DISPLAY_VARIABLES_TABLE = auto()        # 변수 테이블 출력 (!!)
     JUMP = auto()                           # 점프문: <숫자형/변수형>?<숫자형/변수형>
     ARRAY_DECL = auto()                     # 배열 선언
-    ARRAY_WRITE = auto()                    # 배열 쓰기     
-    ARRAY_READ = auto()   
+    ARRAY_WRITE = auto()                    # 배열 쓰기
+    ARRAY_READ = auto()                     # 배열 읽기
+    ARRAY_INPUT = auto()                    # 배열 직접 입력 (냥N!<idx>??야옹)
 
 
 @dataclass
