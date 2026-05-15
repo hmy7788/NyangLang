@@ -662,13 +662,25 @@ body.resizing-v *, body.resizing-h * { cursor: inherit !important; }
 
 /* textarea는 투명하게, 커서만 보이게 */
 #code-editor {
-  color: transparent !important;
+  -webkit-text-fill-color: transparent; /* color 대신 사용 — 렌더링 메트릭 유지 */
+  color: var(--editor-fg) !important;   /* 선택 색상·커서 계산에 사용됨 */
   background: transparent !important;
   caret-color: var(--caret-color) !important;
   cursor: text;
+  display: block;      /* inline-block 기본값으로 인한 baseline 오프셋 제거 */
   position: relative;
   z-index: 1;
   font-weight: 600;
+  -webkit-appearance: none;
+}
+
+/* textarea와 highlight div의 문자 폭을 동일하게 — 한국어 fallback 포함 */
+#code-editor,
+#code-highlight {
+  font-feature-settings: "kern" 0, "calt" 0, "liga" 0;
+  font-variant-ligatures: none;
+  letter-spacing: 0;
+  word-spacing: 0;
 }
 
 /* 드래그 선택 시 글자가 보이도록 */

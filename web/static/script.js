@@ -646,11 +646,21 @@ editor.addEventListener('input', () => {
   updateCursorPos();
 });
 
+let _scrollRaf = null;
 editor.addEventListener('scroll', () => {
-  lineNumbers.style.transform = `translateY(${-editor.scrollTop}px)`;
-  highlight.scrollTop         = editor.scrollTop;
-  highlight.scrollLeft        = editor.scrollLeft;
-  if (debugCmdHighlight) updateCmdHighlightLayer();  // 스크롤 시 박스 위치 재계산
+  if (_scrollRaf) return;
+  _scrollRaf = requestAnimationFrame(() => {
+    _scrollRaf = null;
+    const st = editor.scrollTop;
+    const sl = editor.scrollLeft;
+    lineNumbers.style.transform         = `translateY(${-st}px)`;
+    highlight.scrollTop                 = st;
+    highlight.scrollLeft                = sl;
+    if (debugCmdHighlight) updateCmdHighlightLayer();
+    if (debugLineOverlay.style.display !== 'none') {
+      debugLineOverlay.style.transform  = `translateY(${-st}px)`;
+    }
+  });
 });
 
 editor.addEventListener('click', updateCursorPos);
@@ -708,13 +718,6 @@ lineNumbers.addEventListener('click', (e) => {
   renderBreakpoints();
   if (debugWs && debugMode) {
     debugWs.send(JSON.stringify({ type: 'debug_set_breakpoints', lines: [...debugBreakpoints] }));
-  }
-});
-
-// 디버그 오버레이도 에디터 스크롤에 동기화
-editor.addEventListener('scroll', () => {
-  if (debugLineOverlay.style.display !== 'none') {
-    debugLineOverlay.style.transform = `translateY(${-editor.scrollTop}px)`;
   }
 });
 
