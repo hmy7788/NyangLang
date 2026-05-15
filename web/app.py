@@ -142,11 +142,168 @@ async def ws_run(websocket: WebSocket):
                 "error_line": interp.current_line
             })
         else:
-            await send_safe({"type": "done", "status": "success"})
+            await send_safe({
+                "type": "done",
+                "status": "success",
+                "variables": {str(k): v for k, v in sorted(interp.variables_table.items())},
+            })
 
     except WebSocketDisconnect:
         pass
     finally:
+        executor.shutdown(wait=False)
+
+
+@app.websocket("/ws/debug")
+async def ws_debug(websocket: WebSocket):
+    await websocket.accept()
+
+    try:
+        data = await asyncio.wait_for(websocket.receive_json(), timeout=10.0)
+    except Exception:
+        return
+
+    code = data.get("code", "")
+    lines = code.splitlines()
+    loop = asyncio.get_event_loop()
+
+    # 디버그 제어 상태 (list로 감싸서 클로저에서 수정 가능하게)
+    breakpoints: set = set(data.get("breakpoints", []))
+    step_mode = [True]      # True면 매 라인마다 멈춤
+    cmd_step_mode = [False] # True면 매 명령어마다 멈춤
+    stopped = [False]
+
+    resume_event = threading.Event()  # debug_hook / cmd_hook이 여기서 대기
+    input_event = threading.Event()
+    input_holder: list = [None]
+
+    async def send_safe(msg: dict):
+        try:
+            await websocket.send_json(msg)
+        except Exception:
+            pass
+
+    def collect(msg="", end=None):
+        text = str(msg) + ("" if end is None else end)
+        asyncio.run_coroutine_threadsafe(
+            send_safe({"type": "output", "data": text}), loop
+        ).result(timeout=5)
+
+    def web_input(prompt: str = "") -> str:
+        asyncio.run_coroutine_threadsafe(
+            send_safe({"type": "input_request", "prompt": prompt}), loop
+        ).result(timeout=5)
+        if not input_event.wait(timeout=120):
+            raise RuntimeError("입력 대기 시간이 초과되었습니다. (120초)")
+        input_event.clear()
+        return input_holder[0]
+
+    def debug_hook(pc: int):
+        if stopped[0]:
+            raise RuntimeError("디버깅이 중단되었습니다.")
+        if cmd_step_mode[0]:
+            return  # 명령어 단위 모드일 때는 cmd_hook이 처리
+        line_no = pc + 1
+        if line_no in breakpoints or step_mode[0]:
+            asyncio.run_coroutine_threadsafe(
+                send_safe({
+                    "type": "debug_paused",
+                    "line": line_no,
+                    "stack": list(interp.stack),
+                    "variables": {str(k): v for k, v in sorted(interp.variables_table.items())},
+                }),
+                loop
+            ).result(timeout=5)
+            resume_event.wait()
+            resume_event.clear()
+            if stopped[0]:
+                raise RuntimeError("디버깅이 중단되었습니다.")
+
+    def cmd_hook(pc: int, cmd_idx: int):
+        if stopped[0]:
+            raise RuntimeError("디버깅이 중단되었습니다.")
+        if not cmd_step_mode[0]:
+            return
+        line_no = pc + 1
+        asyncio.run_coroutine_threadsafe(
+            send_safe({
+                "type": "debug_cmd_paused",
+                "line": line_no,
+                "cmd_index": cmd_idx,
+                "stack": list(interp.stack),
+                "variables": {str(k): v for k, v in sorted(interp.variables_table.items())},
+            }),
+            loop
+        ).result(timeout=5)
+        resume_event.wait()
+        resume_event.clear()
+        if stopped[0]:
+            raise RuntimeError("디버깅이 중단되었습니다.")
+
+    interp = Interpreter(output_func=collect, input_func=web_input, debug_hook=debug_hook, cmd_hook=cmd_hook)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    exec_future = loop.run_in_executor(executor, lambda: interp.run_program(lines))
+
+    try:
+        while not exec_future.done():
+            try:
+                msg = await asyncio.wait_for(websocket.receive_json(), timeout=0.1)
+                mtype = msg.get("type", "")
+
+                if mtype == "debug_step":
+                    cmd_step_mode[0] = False
+                    step_mode[0] = True
+                    resume_event.set()
+
+                elif mtype == "debug_cmd_step":
+                    cmd_step_mode[0] = True
+                    step_mode[0] = False
+                    resume_event.set()
+
+                elif mtype == "debug_continue":
+                    cmd_step_mode[0] = False
+                    step_mode[0] = False
+                    resume_event.set()
+
+                elif mtype == "debug_stop":
+                    stopped[0] = True
+                    resume_event.set()
+                    input_event.set()  # 입력 대기 중이면 해제
+
+                elif mtype == "debug_set_breakpoints":
+                    breakpoints.clear()
+                    breakpoints.update(msg.get("lines", []))
+
+                elif mtype == "input":
+                    input_holder[0] = msg.get("value", "")
+                    input_event.set()
+
+            except asyncio.TimeoutError:
+                pass
+            except WebSocketDisconnect:
+                stopped[0] = True
+                resume_event.set()
+                executor.shutdown(wait=False)
+                return
+
+        exc = exec_future.exception()
+        if exc and not stopped[0]:
+            await send_safe({
+                "type": "debug_done", "status": "error",
+                "error_msg": str(exc),
+                "error_line": interp.current_line,
+            })
+        elif not stopped[0]:
+            await send_safe({
+                "type": "debug_done", "status": "success",
+                "variables": {str(k): v for k, v in sorted(interp.variables_table.items())},
+            })
+
+    except WebSocketDisconnect:
+        pass
+    finally:
+        stopped[0] = True
+        resume_event.set()
         executor.shutdown(wait=False)
 
 

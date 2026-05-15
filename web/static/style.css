@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ── NyangLang × VS Code 팔레트 ───────────────────────────────── */
 :root {
@@ -68,9 +68,10 @@
   --run-hover:       linear-gradient(160deg, #f5ac88, #eb8460);
   --run-fg:          #fff5ee;
 
-  /* 폰트 */
+  /* 폰트 및 높이 */
   --font-ui:   'Baloo 2', 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
   --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  --line-height: 24px;
 
   /* 그림자 */
   --shadow:    0 2px 8px rgba(180,100,70,0.15);
@@ -452,8 +453,10 @@ button:disabled { cursor: wait; opacity: 0.55; }
 
 .editor-shell {
   width: 100%;
+  height: 100%;           /* 부모 flex 높이 명시적으로 채움 */
   display: grid;
   grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr; /* 행이 container 높이를 채우도록 고정 */
   overflow: hidden;
 }
 
@@ -461,25 +464,31 @@ button:disabled { cursor: wait; opacity: 0.55; }
   background: var(--gutter-bg);
   border-right: 1px solid var(--border);
   overflow: hidden;
+  position: relative; /* absolute pre의 기준점 */
+  min-width: 50px;    /* auto 컬럼 너비 확보 */
 }
 
 .line-numbers {
+  position: absolute;
+  top: 0; left: 0; right: 0; /* gutter 너비를 채움 */
   padding: 14px 12px 14px 10px;
   font-family: var(--font-mono);
-  font-size: 13px; line-height: 1.6;
+  font-size: 13px;
+  line-height: var(--line-height);
+  font-weight: 600;
   color: var(--line-num-color);
   text-align: right; user-select: none;
-  white-space: pre; overflow: hidden;
-  min-width: 44px;
+  white-space: pre;
+  will-change: transform; /* GPU 가속 transform 스크롤 */
   background:
     repeating-linear-gradient(
       to bottom,
-      var(--gutter-bg) 0, var(--gutter-bg) 25.6px,
-      #fff2e8 25.6px, #fff2e8 26px
+      var(--gutter-bg) 0, var(--gutter-bg) calc(var(--line-height) - 0.4px),
+      #fff2e8 calc(var(--line-height) - 0.4px), #fff2e8 var(--line-height)
     );
 }
 
-.ln-error { color: var(--error) !important; font-weight: bold; }
+.ln-error { color: var(--error) !important; font-weight: bold; background: rgba(217, 92, 112, 0.1); border-radius: 2px; }
 
 #code-editor {
   width: 100%; height: 100%;
@@ -488,12 +497,13 @@ button:disabled { cursor: wait; opacity: 0.55; }
   background:
     repeating-linear-gradient(
       to bottom,
-      var(--editor-bg) 0, var(--editor-bg) 25.6px,
-      #fff5ee 25.6px, #fff5ee 26px
+      var(--editor-bg) 0, var(--editor-bg) calc(var(--line-height) - 0.4px),
+      #fff5ee calc(var(--line-height) - 0.4px), #fff5ee var(--line-height)
     );
   color: var(--editor-fg);
   font-family: var(--font-mono);
-  font-size: 13px; line-height: 1.6;
+  font-size: 13px;
+  line-height: var(--line-height);
   white-space: pre;
   overflow-x: auto; overflow-y: auto;
   caret-color: var(--caret-color);
@@ -561,7 +571,11 @@ button:disabled { cursor: wait; opacity: 0.55; }
   display: flex; align-items: center; gap: 2px; padding: 0 8px;
 }
 
-.terminal-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.terminal-body { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
+
+/* ── Panel content tabs ───────────────────────────────────────── */
+.panel-content { display: none; height: 100%; }
+.panel-content.panel-active { display: block; height: 100%; overflow-y: auto; }
 
 .terminal-output {
   padding: 10px 16px;
@@ -619,6 +633,223 @@ button:disabled { cursor: wait; opacity: 0.55; }
 body.resizing-v { cursor: ns-resize !important; user-select: none; }
 body.resizing-h { cursor: ew-resize !important; user-select: none; }
 body.resizing-v *, body.resizing-h * { cursor: inherit !important; }
+
+/* ── Syntax Highlighting ──────────────────────────────────────── */
+.editor-code-wrap {
+  position: relative;
+  min-height: 0; /* grid item이 행 높이 초과하지 않도록 */
+}
+
+#code-highlight {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: var(--line-height);
+  white-space: pre;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--editor-bg) 0, var(--editor-bg) calc(var(--line-height) - 0.4px),
+    #fff5ee calc(var(--line-height) - 0.4px), #fff5ee var(--line-height)
+  );
+  color: var(--editor-fg);
+}
+
+/* textarea는 투명하게, 커서만 보이게 */
+#code-editor {
+  color: transparent !important;
+  background: transparent !important;
+  caret-color: var(--caret-color) !important;
+  cursor: text;
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+/* 드래그 선택 시 글자가 보이도록 */
+#code-editor::selection {
+  color: var(--editor-fg);
+  background: var(--selection-bg);
+}
+
+/* placeholder는 별도로 색 유지 */
+#code-editor::placeholder {
+  color: #c4a090 !important;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* 토큰별 색상 — 가독성 개선 버전 */
+.hl-nyang   { color: #e67e22; font-weight: 700; }   /* 냥  — 선명한 주황 */
+.hl-nya     { color: #2980b9; font-weight: 700; }   /* 냐  — 선명한 파랑 */
+.hl-yaong   { color: #d35400; font-weight: 800; border-bottom: 1.5px solid rgba(211, 84, 0, 0.3); }  /* 야옹 — 강조된 갈색 */
+.hl-num     { color: #27ae60; font-weight: 600; }   /* .,  — 선명한 초록 */
+.hl-op      { color: #8e44ad; font-weight: 700; }   /* ~!? — 선명한 보라 */
+.hl-comment { color: #95a5a6; font-style: italic; font-weight: 400; }  /* #   — 부드러운 회색 */
+
+/* ── Debug Button (toolbar) ───────────────────────────────────── */
+.debug-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12.5px; font-weight: 600;
+  background: linear-gradient(160deg, #5b8dd9, #3a6abf);
+  color: #fff;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+  border: none;
+}
+.debug-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.debug-btn:active:not(:disabled) { transform: translateY(0); }
+.debug-btn:disabled { opacity: 0.45; cursor: wait; }
+
+/* ── Breakpoint line number marker ───────────────────────────── */
+.ln-bp {
+  color: #e53e3e !important;
+  font-weight: 800;
+}
+
+/* ── Debug current-line overlay ──────────────────────────────── */
+#debug-line-overlay {
+  display: none;
+  position: absolute;
+  left: 0; right: 0;
+  height: 24px;
+  background: rgba(91, 141, 217, 0.18);
+  border-left: 3px solid #5b8dd9;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform;
+}
+
+/* 명령어 하이라이트 박스 — 라인 오버레이와 같은 파란 계열, 더 강조 */
+#debug-cmd-box {
+  display: none;
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  height: 22px;
+  border-radius: 3px;
+  background: rgba(91, 141, 217, 0.32);
+  box-shadow: 0 0 0 1.5px #5b8dd9;
+}
+
+/* ── Debug Panel ──────────────────────────────────────────────── */
+.debug-toolbar {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-header-bg);
+}
+
+.dbg-btn {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+  background: var(--hover-bg);
+  color: var(--editor-fg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.dbg-btn:hover:not(:disabled) { background: var(--active-bg); }
+.dbg-btn:disabled { opacity: 0.4; cursor: default; }
+.dbg-btn.dbg-stop { color: var(--error); border-color: var(--error); }
+.dbg-btn.dbg-stop:hover:not(:disabled) { background: rgba(217, 92, 112, 0.12); }
+
+.debug-status {
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--panel-tab-fg);
+  border-bottom: 1px dashed var(--border);
+}
+
+.debug-section {
+  padding: 8px 14px 4px;
+}
+
+.debug-section-title {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--panel-tab-active);
+  margin-bottom: 4px;
+}
+
+.debug-hint {
+  font-weight: 400; text-transform: none;
+  color: var(--panel-tab-fg); letter-spacing: 0;
+}
+
+.debug-pre {
+  font-family: var(--font-mono);
+  font-size: 12.5px; line-height: 1.7;
+  color: #2980b9;
+  white-space: pre-wrap;
+  padding: 4px 6px;
+  background: rgba(41, 128, 185, 0.06);
+  border-radius: 4px;
+  min-height: 28px;
+}
+
+.debug-bp-list {
+  font-size: 12.5px;
+  color: #e53e3e;
+  padding: 4px 0;
+}
+
+/* ── Variables Panel ──────────────────────────────────────────── */
+.vars-container {
+  padding: 10px 16px;
+}
+
+.vars-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.vars-table thead tr {
+  background: var(--panel-header-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.vars-table th {
+  padding: 6px 14px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--panel-tab-active);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vars-table td {
+  padding: 5px 14px;
+  border-bottom: 1px solid rgba(233, 185, 167, 0.35);
+  color: var(--editor-fg);
+}
+
+.vars-table td:last-child {
+  color: #2980b9;
+  font-weight: 600;
+}
+
+.vars-table tr:last-child td { border-bottom: none; }
+.vars-table tr:hover td { background: var(--hover-bg); }
+
+.vars-placeholder td {
+  color: #c4a090;
+  font-style: italic;
+  font-family: var(--font-ui);
+  text-align: center;
+  padding: 18px 0;
+}
 
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 768px) {

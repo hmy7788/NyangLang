@@ -257,6 +257,8 @@ class Interpreter(CommandExecMixin):
     output_func: Callable[[str], None] = print
     input_func: Callable[[int], None] = input
     current_line: int = 0
+    debug_hook: Optional[Callable[[int], None]] = None  # debug: called before each line with pc
+    cmd_hook: Optional[Callable[[int, int], None]] = None  # debug: called before each command with (pc, cmd_idx)
 
 
     def write(self, msg="", end=None) -> None:
@@ -280,6 +282,8 @@ class Interpreter(CommandExecMixin):
         n = len(clean_lines)
 
         while 0 <= pc < n:
+            if self.debug_hook:
+                self.debug_hook(pc)
             self.current_line = pc + 1
             line = clean_lines[pc]
             tokens = lex_line(line)
@@ -289,7 +293,9 @@ class Interpreter(CommandExecMixin):
             cmds = parse_line(tokens)
 
             jumped = False
-            for cmd in cmds:
+            for cmd_idx, cmd in enumerate(cmds):
+                if self.cmd_hook:
+                    self.cmd_hook(pc, cmd_idx)
                 if cmd.kind == CommandKind.JUMP:
                     pc = self.execute_with_pc(cmd, pc)
                     jumped = True

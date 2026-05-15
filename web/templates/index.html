@@ -158,6 +158,9 @@
           <img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" />
           실행
         </button>
+        <button id="debug-btn" class="debug-btn" title="디버깅 시작">
+          🐞 디버그
+        </button>
         <div class="toolbar-divider"></div>
         <button id="clear-btn" class="toolbar-icon-btn" title="초기화">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
@@ -188,14 +191,19 @@
           <div class="gutter">
             <pre id="line-numbers" class="line-numbers">1</pre>
           </div>
-          <textarea
-            id="code-editor"
-            spellcheck="false"
-            wrap="off"
-            autocorrect="off"
-            autocapitalize="off"
-            placeholder="# 여기에 냥Lang 코드를 작성하세요."
-          ></textarea>
+          <div class="editor-code-wrap">
+            <div id="code-highlight" aria-hidden="true"></div>
+            <div id="debug-line-overlay" aria-hidden="true"></div>
+            <div id="debug-cmd-box" aria-hidden="true"></div>
+            <textarea
+              id="code-editor"
+              spellcheck="false"
+              wrap="off"
+              autocorrect="off"
+              autocapitalize="off"
+              placeholder="# 여기에 냥Lang 코드를 작성하세요."
+            ></textarea>
+          </div>
         </div>
       </div>
 
@@ -206,9 +214,11 @@
       <div class="terminal-panel" id="terminal-panel">
         <div class="terminal-header">
           <div class="terminal-tabs">
-            <button class="terminal-tab tt-active">출력</button>
-            <button class="terminal-tab">문제</button>
-            <button class="terminal-tab">터미널</button>
+            <button class="terminal-tab tt-active" data-panel="output-panel">출력</button>
+            <button class="terminal-tab" data-panel="vars-panel">변수</button>
+            <button class="terminal-tab" id="debug-tab-btn" data-panel="debug-panel">디버그</button>
+            <button class="terminal-tab" data-panel="problems-panel">문제</button>
+            <button class="terminal-tab" data-panel="terminal-dummy-panel">터미널</button>
           </div>
           <div class="terminal-actions">
             <button id="copy-output-btn" class="toolbar-icon-btn" title="출력 복사">
@@ -231,12 +241,57 @@
           </div>
         </div>
         <div class="terminal-body">
-          <pre id="output" class="terminal-output"><span class="output-placeholder"> 냥Lang Playground 출력 터미널
+          <!-- 출력 패널 -->
+          <div id="output-panel" class="panel-content panel-active">
+            <pre id="output" class="terminal-output"><span class="output-placeholder"> 냥Lang Playground 출력 터미널
  ─────────────────────────────────
  왼쪽 탐색기에서 예제 파일을 선택하거나
  코드를 작성 후 ▶ 실행 버튼을 눌러보세요.
  단축키: Ctrl+Enter
 </span></pre>
+          </div>
+          <!-- 변수 패널 -->
+          <div id="vars-panel" class="panel-content">
+            <div class="vars-container">
+              <table class="vars-table" id="vars-table">
+                <thead>
+                  <tr><th>변수</th><th>값</th></tr>
+                </thead>
+                <tbody id="vars-body">
+                  <tr class="vars-placeholder"><td colspan="2">실행 후 변수 상태가 표시됩니다.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- 디버그 패널 -->
+          <div id="debug-panel" class="panel-content">
+            <div class="debug-toolbar">
+              <button id="debug-step-btn" class="dbg-btn" disabled title="다음 줄 실행">⏭ 다음 줄</button>
+              <button id="debug-cmd-step-btn" class="dbg-btn" disabled title="다음 명령어 실행">⏩ 다음 명령어</button>
+              <button id="debug-continue-btn" class="dbg-btn" disabled title="계속 실행">▶ 계속</button>
+              <button id="debug-stop-btn" class="dbg-btn dbg-stop" disabled title="디버깅 중단">⏹ 중단</button>
+            </div>
+            <div class="debug-status">
+              상태: <span id="debug-status-text">대기 중</span>
+              &nbsp;|&nbsp; 라인: <span id="debug-line-text">-</span>
+            </div>
+            <div class="debug-section">
+              <div class="debug-section-title">스택 <span class="debug-hint">(top → bottom)</span></div>
+              <pre id="debug-stack-view" class="debug-pre">-</pre>
+            </div>
+            <div class="debug-section">
+              <div class="debug-section-title">브레이크포인트 <span class="debug-hint">(라인 번호 클릭으로 설정)</span></div>
+              <div id="debug-bp-list" class="debug-bp-list">없음</div>
+            </div>
+          </div>
+          <!-- 문제 패널 -->
+          <div id="problems-panel" class="panel-content">
+            <pre class="terminal-output" style="color:var(--panel-tab-fg);padding:12px 16px;">문제가 없습니다.</pre>
+          </div>
+          <!-- 터미널 패널 (더미) -->
+          <div id="terminal-dummy-panel" class="panel-content">
+            <pre class="terminal-output" style="color:var(--panel-tab-fg);padding:12px 16px;">터미널은 로컬 CLI를 사용하세요: <span style="color:var(--hl-nyang,#e67e22)">nyang run &lt;파일&gt;</span></pre>
+          </div>
         </div>
       </div>
 
@@ -271,6 +326,7 @@
 <script>
 // ── DOM refs ───────────────────────────────────────────────────────
 const editor        = document.getElementById('code-editor');
+const highlight     = document.getElementById('code-highlight');
 const lineNumbers   = document.getElementById('line-numbers');
 const runBtn        = document.getElementById('run-btn');
 const clearBtn      = document.getElementById('clear-btn');
@@ -285,6 +341,20 @@ const tabDot        = document.getElementById('tab-dot');
 const cursorPos     = document.getElementById('cursor-pos');
 const terminalPanel = document.getElementById('terminal-panel');
 const editorPane    = document.getElementById('editor-pane');
+const varsBody      = document.getElementById('vars-body');
+const terminalTabs  = document.querySelectorAll('.terminal-tab');
+const panelContents = document.querySelectorAll('.panel-content');
+const debugBtn          = document.getElementById('debug-btn');
+const debugTabBtn       = document.getElementById('debug-tab-btn');
+const debugStepBtn      = document.getElementById('debug-step-btn');
+const debugCmdStepBtn   = document.getElementById('debug-cmd-step-btn');
+const debugContinueBtn  = document.getElementById('debug-continue-btn');
+const debugStopBtn      = document.getElementById('debug-stop-btn');
+const debugStatusText   = document.getElementById('debug-status-text');
+const debugLineText     = document.getElementById('debug-line-text');
+const debugStackView    = document.getElementById('debug-stack-view');
+const debugBpList       = document.getElementById('debug-bp-list');
+const debugLineOverlay  = document.getElementById('debug-line-overlay');
 
 // ── Examples ───────────────────────────────────────────────────────
 const examples = {
@@ -374,21 +444,93 @@ let currentErrorLine = null;
 let ws = null;
 let isDirty = false;
 
+// ── Syntax Highlighting ────────────────────────────────────────────
+function _esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function _hlCode(code) {
+  let h = _esc(code);
+  h = h.replace(/야옹/g,  '<span class="hl-yaong">야옹</span>');
+  h = h.replace(/냥+/g,   m => `<span class="hl-nyang">${m}</span>`);
+  h = h.replace(/냐+/g,   m => `<span class="hl-nya">${m}</span>`);
+  h = h.replace(/[.,]+/g, m => `<span class="hl-num">${m}</span>`);
+  h = h.replace(/[~!?]+/g,m => `<span class="hl-op">${m}</span>`);
+  return h;
+}
+
+// 야옹 구분자로 cmdIdx번 명령어의 문자 범위 [start, end) 반환
+function getCommandRange(code, cmdIdx) {
+  const ends = [];
+  let pos = 0;
+  while (pos < code.length) {
+    const found = code.indexOf('야옹', pos);
+    if (found === -1) break;
+    ends.push(found + 2);
+    pos = found + 2;
+  }
+  if (cmdIdx >= ends.length) return null;
+  return {
+    start: cmdIdx === 0 ? 0 : ends[cmdIdx - 1],
+    end: ends[cmdIdx],
+  };
+}
+
+function highlightLine(rawLine, cmdHighlightIdx = -1) {
+  const ci = rawLine.indexOf('#');
+  const code    = ci === -1 ? rawLine : rawLine.slice(0, ci);
+  const comment = ci === -1 ? '' : rawLine.slice(ci);
+  const commentHtml = comment ? `<span class="hl-comment">${_esc(comment)}</span>` : '';
+
+  if (cmdHighlightIdx >= 0) {
+    const range = getCommandRange(code, cmdHighlightIdx);
+    if (range) {
+      const before = code.slice(0, range.start);
+      const cmd    = code.slice(range.start, range.end);
+      const after  = code.slice(range.end);
+      return _hlCode(before)
+        + `<span class="hl-cmd-active">${_hlCode(cmd)}</span>`
+        + _hlCode(after)
+        + commentHtml;
+    }
+  }
+  return _hlCode(code) + commentHtml;
+}
+
+function highlightCode(text) {
+  return text.split('\n').map(line => highlightLine(line)).join('\n');
+}
+
+function updateHighlight() {
+  highlight.innerHTML   = highlightCode(editor.value);
+  highlight.scrollTop   = editor.scrollTop;
+  highlight.scrollLeft  = editor.scrollLeft;
+}
+
 // ── Line numbers ───────────────────────────────────────────────────
 function updateLineNumbers(errorLine = null) {
-  currentErrorLine = errorLine;
-  const lines = (editor.value || '').split('\n').length || 1;
+  const text = editor.value || '';
+  const lines = text.split('\n').length;
   let buf = '';
   for (let i = 1; i <= lines; i++) {
-    buf += i === errorLine
-      ? `<span class="ln-error">${i}</span>\n`
-      : i + '\n';
+    const isBp = debugBreakpoints.has(i);
+    const cls = i === errorLine ? 'ln-error' : (isBp ? 'ln-bp' : '');
+    const marker = isBp ? '●' : i;
+    if (cls) {
+      buf += `<span class="${cls}" data-line="${i}">${marker}</span>\n`;
+    } else {
+      buf += `<span data-line="${i}">${i}</span>\n`;
+    }
   }
   lineNumbers.innerHTML = buf;
+  lineNumbers.style.transform = `translateY(${-editor.scrollTop}px)`;
+
   if (errorLine) {
-    const lh = parseFloat(getComputedStyle(editor).lineHeight);
-    editor.scrollTop = Math.max(0, (errorLine - 1) * lh - editor.clientHeight / 3);
-    lineNumbers.scrollTop = editor.scrollTop;
+    currentErrorLine = errorLine;
+    const lh = 24;
+    const targetScroll = Math.max(0, (errorLine - 1) * lh - editor.clientHeight / 3);
+    editor.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    lineNumbers.style.transform = `translateY(${-targetScroll}px)`;
   }
 }
 
@@ -406,6 +548,222 @@ function updateCursorPos() {
   const ln = lines.length;
   const col = lines[lines.length - 1].length + 1;
   cursorPos.textContent = `Ln ${ln}, Col ${col}`;
+}
+
+// ── Debug state ────────────────────────────────────────────────────
+let debugWs = null;
+let debugMode = false;
+let debugBreakpoints = new Set();
+let debugCmdHighlight = null;  // { line, cmdIdx } | null
+const LINE_HEIGHT = 24;
+
+const debugCmdBox = document.getElementById('debug-cmd-box');
+
+// canvas로 텍스트 픽셀 너비를 측정
+let _measureCtx = null;
+function measurePx(text) {
+  if (!_measureCtx) {
+    _measureCtx = document.createElement('canvas').getContext('2d');
+    _measureCtx.font = '600 13px "JetBrains Mono", monospace';
+  }
+  return _measureCtx.measureText(text).width;
+}
+
+// 명령어 박스를 canvas 측정값 기반으로 픽셀 단위 배치
+function updateCmdHighlightLayer() {
+  if (!debugCmdBox) return;
+  if (!debugCmdHighlight) {
+    debugCmdBox.style.display = 'none';
+    return;
+  }
+  const { line: targetLine, cmdIdx } = debugCmdHighlight;
+  const lines = editor.value.split('\n');
+  const rawLine = lines[targetLine - 1] ?? '';
+  const ci = rawLine.indexOf('#');
+  const code = ci === -1 ? rawLine : rawLine.slice(0, ci);
+  const range = getCommandRange(code, cmdIdx);
+  if (!range) { debugCmdBox.style.display = 'none'; return; }
+
+  const before  = code.slice(0, range.start);
+  const cmdText = code.slice(range.start, range.end);
+  const editorPadLeft = 16;   // #code-highlight padding-left
+  const editorPadTop  = 14;   // #code-highlight padding-top
+
+  const x = editorPadLeft + measurePx(before) - editor.scrollLeft;
+  const y = editorPadTop  + (targetLine - 1) * LINE_HEIGHT - editor.scrollTop + 1;
+  const w = measurePx(cmdText);
+
+  debugCmdBox.style.display = 'block';
+  debugCmdBox.style.left    = x + 'px';
+  debugCmdBox.style.top     = y + 'px';
+  debugCmdBox.style.width   = w + 'px';
+}
+
+function switchToPanel(panelId) {
+  terminalTabs.forEach(t => t.classList.remove('tt-active'));
+  panelContents.forEach(p => p.classList.toggle('panel-active', p.id === panelId));
+  const tab = document.querySelector(`[data-panel="${panelId}"]`);
+  if (tab) tab.classList.add('tt-active');
+}
+
+function setDebugActive(active) {
+  debugMode = active;
+  debugStepBtn.disabled = !active;
+  debugCmdStepBtn.disabled = !active;
+  debugContinueBtn.disabled = !active;
+  debugStopBtn.disabled = !active;
+  debugBtn.disabled = active;
+  runBtn.disabled = active;
+  if (active) {
+    debugBtn.textContent = '🐞 디버깅 중…';
+    switchToPanel('debug-panel');
+  } else {
+    debugBtn.textContent = '🐞 디버그';
+    highlightDebugLine(null);
+    debugStatusText.textContent = '종료됨';
+    debugCmdHighlight = null;
+    updateCmdHighlightLayer();
+  }
+}
+
+function highlightDebugLine(lineNo) {
+  if (!lineNo) {
+    debugLineOverlay.style.display = 'none';
+    lineNumbers.querySelectorAll('.ln-debug').forEach(el => el.classList.remove('ln-debug'));
+    return;
+  }
+  const top = 14 + (lineNo - 1) * LINE_HEIGHT;
+  debugLineOverlay.style.top = top + 'px';
+  debugLineOverlay.style.display = 'block';
+  debugLineOverlay.style.transform = `translateY(${-editor.scrollTop}px)`;
+}
+
+function renderBreakpoints() {
+  // 라인 번호 렌더링 시 브레이크포인트 마커 반영
+  updateLineNumbers(currentErrorLine);
+  // 브레이크포인트 목록 표시
+  if (debugBreakpoints.size === 0) {
+    debugBpList.textContent = '없음';
+  } else {
+    debugBpList.textContent = [...debugBreakpoints].sort((a,b)=>a-b).map(l => `${l}번 줄`).join(', ');
+  }
+}
+
+function startDebug() {
+  if (debugWs) { debugWs.close(); debugWs = null; }
+  const code = editor.value.trim();
+  if (!code) return;
+
+  clearOutput();
+  clearVariables();
+  currentErrorLine = null;
+  updateLineNumbers(null);
+  setDebugActive(true);
+  debugStatusText.textContent = '시작 중…';
+  debugLineText.textContent = '-';
+  debugStackView.textContent = '-';
+
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  debugWs = new WebSocket(`${protocol}//${location.host}/ws/debug`);
+
+  debugWs.onopen = () => {
+    debugWs.send(JSON.stringify({
+      code,
+      breakpoints: [...debugBreakpoints],
+    }));
+  };
+
+  debugWs.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+
+    if (msg.type === 'debug_paused') {
+      const ln = msg.line;
+      debugStatusText.textContent = `${ln}번 줄에서 일시정지`;
+      debugLineText.textContent = ln;
+      debugStackView.textContent = msg.stack.length
+        ? msg.stack.slice().reverse().join('\n')
+        : '(비어 있음)';
+      renderVariables(msg.variables || {});
+      highlightDebugLine(ln);
+      debugCmdHighlight = null;
+      updateCmdHighlightLayer();
+      const targetScroll = Math.max(0, (ln - 1) * LINE_HEIGHT - editor.clientHeight / 3);
+      editor.scrollTo({ top: targetScroll, behavior: 'smooth' });
+
+    } else if (msg.type === 'debug_cmd_paused') {
+      const ln = msg.line;
+      const ci = msg.cmd_index + 1;
+      debugStatusText.textContent = `${ln}번 줄의 ${ci}번째 명령어에서 일시정지`;
+      debugLineText.textContent = `${ln} (명령어 ${ci})`;
+      debugStackView.textContent = msg.stack.length
+        ? msg.stack.slice().reverse().join('\n')
+        : '(비어 있음)';
+      renderVariables(msg.variables || {});
+      highlightDebugLine(ln);
+      debugCmdHighlight = { line: ln, cmdIdx: msg.cmd_index };
+      updateCmdHighlightLayer();
+      const targetScroll = Math.max(0, (ln - 1) * LINE_HEIGHT - editor.clientHeight / 3);
+      editor.scrollTo({ top: targetScroll, behavior: 'smooth' });
+
+    } else if (msg.type === 'output') {
+      appendOutput(msg.data);
+
+    } else if (msg.type === 'input_request') {
+      showInputPrompt(msg.prompt);
+
+    } else if (msg.type === 'debug_done') {
+      setDebugActive(false);
+      if (msg.status === 'error') {
+        updateLineNumbers(msg.error_line || null);
+        const lineInfo = msg.error_line ? ` (${msg.error_line}번 줄)` : '';
+        appendOutput(`\n❌${lineInfo} ${msg.error_msg}\n`, true);
+        debugStatusText.textContent = '오류 종료';
+      } else {
+        appendOutput('\n\n─── 디버깅 완료 ───\n', false);
+        renderVariables(msg.variables || {});
+        debugStatusText.textContent = '완료';
+      }
+      debugWs = null;
+    }
+  };
+
+  debugWs.onerror = () => {
+    appendOutput('❌ 디버그 연결 오류\n', true);
+    setDebugActive(false);
+    debugWs = null;
+  };
+
+  debugWs.onclose = () => {
+    if (debugMode) setDebugActive(false);
+    debugWs = null;
+  };
+}
+
+// ── Panel tab switching ────────────────────────────────────────────
+terminalTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    terminalTabs.forEach(t => t.classList.remove('tt-active'));
+    tab.classList.add('tt-active');
+    const target = tab.dataset.panel;
+    panelContents.forEach(p => {
+      p.classList.toggle('panel-active', p.id === target);
+    });
+  });
+});
+
+// ── Variables panel ────────────────────────────────────────────────
+function renderVariables(vars) {
+  if (!vars || Object.keys(vars).length === 0) {
+    varsBody.innerHTML = '<tr class="vars-placeholder"><td colspan="2">실행 결과 변수가 없습니다.</td></tr>';
+    return;
+  }
+  varsBody.innerHTML = Object.entries(vars)
+    .map(([k, v]) => `<tr><td>변수 ${k}</td><td>${v}</td></tr>`)
+    .join('');
+}
+
+function clearVariables() {
+  varsBody.innerHTML = '<tr class="vars-placeholder"><td colspan="2">실행 후 변수 상태가 표시됩니다.</td></tr>';
 }
 
 // ── Output helpers ─────────────────────────────────────────────────
@@ -448,6 +806,8 @@ function showInputPrompt(prompt) {
     line.replaceWith(staticSpan);
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'input', value }));
+    } else if (debugWs && debugWs.readyState === WebSocket.OPEN) {
+      debugWs.send(JSON.stringify({ type: 'input', value }));
     }
   });
 }
@@ -464,6 +824,8 @@ function runCode() {
   if (ws) { ws.close(); ws = null; }
 
   clearOutput();
+  clearVariables();
+  currentErrorLine = null;
   updateLineNumbers(null);
   runBtn.disabled = true;
   runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw run-paw-spin" aria-hidden="true" /> 실행 중…`;
@@ -488,6 +850,7 @@ function runCode() {
         appendOutput(`\n❌${lineInfo} ${msg.error_msg}\n`, true);
       } else {
         appendOutput('\n\n─── 실행 완료 ───\n', false);
+        renderVariables(msg.variables || {});
       }
     }
   };
@@ -535,6 +898,7 @@ document.getElementById('sidebar-files').addEventListener('click', (e) => {
 
   editor.value = examples[fileKey] || '';
   updateLineNumbers();
+  updateHighlight();
   setDirty(false);
   clearOutput();
   updateCursorPos();
@@ -601,13 +965,18 @@ togglePanelBtn.addEventListener('click', () => {
 
 // ── Editor events ──────────────────────────────────────────────────
 editor.addEventListener('input', () => {
-  updateLineNumbers(currentErrorLine);
+  currentErrorLine = null; // Clear error on edit
+  updateLineNumbers(null);
+  updateHighlight();
   setDirty(true);
   updateCursorPos();
 });
 
 editor.addEventListener('scroll', () => {
-  lineNumbers.scrollTop = editor.scrollTop;
+  lineNumbers.style.transform = `translateY(${-editor.scrollTop}px)`;
+  highlight.scrollTop         = editor.scrollTop;
+  highlight.scrollLeft        = editor.scrollLeft;
+  if (debugCmdHighlight) updateCmdHighlightLayer();  // 스크롤 시 박스 위치 재계산
 });
 
 editor.addEventListener('click', updateCursorPos);
@@ -625,17 +994,65 @@ editor.addEventListener('keydown', (e) => {
     const end   = editor.selectionEnd;
     editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
     editor.selectionStart = editor.selectionEnd = start + 2;
-    updateLineNumbers(currentErrorLine);
+    updateLineNumbers(null);
+    updateHighlight();
   }
 });
 
 // ── Button events ──────────────────────────────────────────────────
 runBtn.addEventListener('click', runCode);
 
+debugBtn.addEventListener('click', startDebug);
+
+debugStepBtn.addEventListener('click', () => {
+  if (debugWs) debugWs.send(JSON.stringify({ type: 'debug_step' }));
+});
+
+debugCmdStepBtn.addEventListener('click', () => {
+  if (debugWs) debugWs.send(JSON.stringify({ type: 'debug_cmd_step' }));
+});
+
+debugContinueBtn.addEventListener('click', () => {
+  if (debugWs) {
+    highlightDebugLine(null);
+    debugWs.send(JSON.stringify({ type: 'debug_continue' }));
+    debugStatusText.textContent = '실행 중…';
+  }
+});
+
+debugStopBtn.addEventListener('click', () => {
+  if (debugWs) debugWs.send(JSON.stringify({ type: 'debug_stop' }));
+});
+
+// 라인 번호 클릭 → 브레이크포인트 토글
+lineNumbers.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-line]');
+  if (!el) return;
+  const ln = parseInt(el.dataset.line);
+  if (debugBreakpoints.has(ln)) debugBreakpoints.delete(ln);
+  else debugBreakpoints.add(ln);
+  renderBreakpoints();
+  if (debugWs && debugMode) {
+    debugWs.send(JSON.stringify({ type: 'debug_set_breakpoints', lines: [...debugBreakpoints] }));
+  }
+});
+
+// 디버그 오버레이도 에디터 스크롤에 동기화
+editor.addEventListener('scroll', () => {
+  if (debugLineOverlay.style.display !== 'none') {
+    debugLineOverlay.style.transform = `translateY(${-editor.scrollTop}px)`;
+  }
+});
+
 clearBtn.addEventListener('click', () => {
   if (ws) { ws.close(); ws = null; }
+  if (debugWs) { debugWs.close(); debugWs = null; }
+  if (debugMode) setDebugActive(false);
   editor.value = '';
+  debugBreakpoints.clear();
+  renderBreakpoints();
   updateLineNumbers(null);
+  updateHighlight();
   setDirty(false);
   clearOutput();
   updateCursorPos();
@@ -650,6 +1067,7 @@ copyOutputBtn.addEventListener('click', async () => {
 
 // ── Init ───────────────────────────────────────────────────────────
 updateLineNumbers();
+updateHighlight();
 updateCursorPos();
 </script>
 </body>
