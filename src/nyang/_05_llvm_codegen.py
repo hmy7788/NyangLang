@@ -194,12 +194,13 @@ class LLVMCodeGen:
     def _emit_array_input(self, cmd: Command) -> None:
         idx = (ir.Constant(i32, cmd.array_idx) if cmd.array_write_mode == 0
                else self.builder.load(self._get_var(cmd.array_idx), name="idx"))
+        self.builder.call(self.printf_fn, [self._fmt_ptr(f"배열{cmd.array_id} %d번 인덱스 입력 > "), idx])
         ptr = self._get_array_elem_ptr(cmd.array_id, idx)
         self.builder.call(self.scanf_fn, [self._fmt_ptr("%d"), ptr])
 
     def _emit_input(self, cmd: Command) -> None:
-        fmt = self._fmt_ptr("%d")
-        self.builder.call(self.scanf_fn, [fmt, self._get_var(cmd.nyang_id)])
+        self.builder.call(self.printf_fn, [self._fmt_ptr(f"변수{cmd.nyang_id} 입력 > ")])
+        self.builder.call(self.scanf_fn, [self._fmt_ptr("%d"), self._get_var(cmd.nyang_id)])
 
     def _emit_output(self, cmd: Command) -> None:
         if cmd.output_kind == "int":
