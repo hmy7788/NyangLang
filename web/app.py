@@ -211,6 +211,7 @@ async def ws_debug(websocket: WebSocket):
                     "line": line_no,
                     "stack": list(interp.stack),
                     "variables": {str(k): v for k, v in sorted(interp.variables_table.items())},
+                    "arrays": {str(k): list(v) for k, v in sorted(interp.array_table.items())},
                 }),
                 loop
             ).result(timeout=5)
@@ -232,6 +233,7 @@ async def ws_debug(websocket: WebSocket):
                 "cmd_index": cmd_idx,
                 "stack": list(interp.stack),
                 "variables": {str(k): v for k, v in sorted(interp.variables_table.items())},
+                "arrays": {str(k): list(v) for k, v in sorted(interp.array_table.items())},
             }),
             loop
         ).result(timeout=5)
@@ -297,6 +299,7 @@ async def ws_debug(websocket: WebSocket):
             await send_safe({
                 "type": "debug_done", "status": "success",
                 "variables": {str(k): v for k, v in sorted(interp.variables_table.items())},
+                "arrays": {str(k): list(v) for k, v in sorted(interp.array_table.items())},
             })
 
     except WebSocketDisconnect:

@@ -3,6 +3,7 @@ const editor        = document.getElementById('code-editor');
 const highlight     = document.getElementById('code-highlight');
 const lineNumbers   = document.getElementById('line-numbers');
 const runBtn        = document.getElementById('run-btn');
+const runStopBtn    = document.getElementById('run-stop-btn');
 const clearBtn      = document.getElementById('clear-btn');
 const clearOutputBtn= document.getElementById('clear-output-btn');
 const output        = document.getElementById('output');
@@ -18,8 +19,9 @@ const editorPane    = document.getElementById('editor-pane');
 const varsBody      = document.getElementById('vars-body');
 const terminalTabs  = document.querySelectorAll('.terminal-tab');
 const panelContents = document.querySelectorAll('.panel-content');
-const debugBtn          = document.getElementById('debug-btn');
-const debugTabBtn       = document.getElementById('debug-tab-btn');
+const debugBtn            = document.getElementById('debug-btn');
+const explorerActivityBtn = document.getElementById('explorer-activity-btn');
+const debugActivityBtn    = document.getElementById('debug-activity-btn');
 const debugStepBtn      = document.getElementById('debug-step-btn');
 const debugCmdStepBtn   = document.getElementById('debug-cmd-step-btn');
 const debugContinueBtn  = document.getElementById('debug-continue-btn');
@@ -29,6 +31,8 @@ const debugLineText     = document.getElementById('debug-line-text');
 const debugStackView    = document.getElementById('debug-stack-view');
 const debugBpList       = document.getElementById('debug-bp-list');
 const debugLineOverlay  = document.getElementById('debug-line-overlay');
+const debugVarsWrap     = document.getElementById('debug-vars-wrap');
+const debugArraysWrap   = document.getElementById('debug-arrays-wrap');
 
 // ── Examples ───────────────────────────────────────────────────────
 const examples = {
@@ -280,6 +284,50 @@ function switchToPanel(panelId) {
   if (tab) tab.classList.add('tt-active');
 }
 
+function renderDebugVars(vars) {
+  if (!vars || Object.keys(vars).length === 0) {
+    debugVarsWrap.innerHTML = '<span class="dbg-empty">없음</span>';
+    return;
+  }
+  let html = '<table class="dbg-var-table">';
+  for (const [k, v] of Object.entries(vars)) {
+    html += `<tr><td class="dv-name">변수${k}</td><td class="dv-val">${v}</td></tr>`;
+  }
+  html += '</table>';
+  debugVarsWrap.innerHTML = html;
+}
+
+function renderDebugArrays(arrays) {
+  if (!arrays || Object.keys(arrays).length === 0) {
+    debugArraysWrap.innerHTML = '<span class="dbg-empty">없음</span>';
+    return;
+  }
+  let html = '';
+  for (const [k, arr] of Object.entries(arrays)) {
+    const cells = arr.map((v, i) =>
+      `<span class="dbg-cell" title="[${i}]">${v}</span>`
+    ).join('');
+    html += `<div class="dbg-array-row"><span class="dbg-arr-name">배열${k}</span><span class="dbg-arr-cells">${cells}</span></div>`;
+  }
+  debugArraysWrap.innerHTML = html;
+}
+
+function showSidebarDebug() {
+  document.getElementById('sidebar-explorer-body').style.display = 'none';
+  document.getElementById('debug-sidebar-body').style.display = 'flex';
+  document.getElementById('sidebar-header').textContent = '실행 및 디버그';
+  document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('ab-active'));
+  debugActivityBtn.classList.add('ab-active');
+}
+
+function showSidebarExplorer() {
+  document.getElementById('debug-sidebar-body').style.display = 'none';
+  document.getElementById('sidebar-explorer-body').style.display = '';
+  document.getElementById('sidebar-header').textContent = '탐색기';
+  document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('ab-active'));
+  explorerActivityBtn.classList.add('ab-active');
+}
+
 function setDebugActive(active) {
   debugMode = active;
   debugStepBtn.disabled = !active;
@@ -290,13 +338,16 @@ function setDebugActive(active) {
   runBtn.disabled = active;
   if (active) {
     debugBtn.textContent = '🐞 디버깅 중…';
-    switchToPanel('debug-panel');
+    showSidebarDebug();
   } else {
     debugBtn.textContent = '🐞 디버그';
     highlightDebugLine(null);
     debugStatusText.textContent = '종료됨';
     debugCmdHighlight = null;
     updateCmdHighlightLayer();
+    renderDebugVars({});
+    renderDebugArrays({});
+    showSidebarExplorer();
   }
 }
 
@@ -358,6 +409,8 @@ function startDebug() {
         ? msg.stack.slice().reverse().join('\n')
         : '(비어 있음)';
       renderVariables(msg.variables || {});
+      renderDebugVars(msg.variables || {});
+      renderDebugArrays(msg.arrays || {});
       highlightDebugLine(ln);
       debugCmdHighlight = null;
       updateCmdHighlightLayer();
@@ -373,6 +426,8 @@ function startDebug() {
         ? msg.stack.slice().reverse().join('\n')
         : '(비어 있음)';
       renderVariables(msg.variables || {});
+      renderDebugVars(msg.variables || {});
+      renderDebugArrays(msg.arrays || {});
       highlightDebugLine(ln);
       debugCmdHighlight = { line: ln, cmdIdx: msg.cmd_index };
       updateCmdHighlightLayer();
@@ -395,6 +450,8 @@ function startDebug() {
       } else {
         appendOutput('\n\n─── 디버깅 완료 ───\n', false);
         renderVariables(msg.variables || {});
+        renderDebugVars(msg.variables || {});
+        renderDebugArrays(msg.arrays || {});
         debugStatusText.textContent = '완료';
       }
       debugWs = null;
@@ -487,6 +544,12 @@ function showInputPrompt(prompt) {
 }
 
 // ── Run ────────────────────────────────────────────────────────────
+function resetRunBtn() {
+  runBtn.disabled = false;
+  runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" /> 실행`;
+  runStopBtn.style.display = 'none';
+}
+
 function runCode() {
   const code = editor.value;
   if (!code.trim()) {
@@ -503,6 +566,7 @@ function runCode() {
   updateLineNumbers(null);
   runBtn.disabled = true;
   runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw run-paw-spin" aria-hidden="true" /> 실행 중…`;
+  runStopBtn.style.display = '';
 
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(`${protocol}//${location.host}/ws/run`);
@@ -516,8 +580,7 @@ function runCode() {
     } else if (msg.type === 'input_request') {
       showInputPrompt(msg.prompt);
     } else if (msg.type === 'done') {
-      runBtn.disabled = false;
-      runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" /> 실행`;
+      resetRunBtn();
       if (msg.status === 'error') {
         updateLineNumbers(msg.error_line || null);
         const lineInfo = msg.error_line ? ` (${msg.error_line}번 줄)` : '';
@@ -531,15 +594,11 @@ function runCode() {
 
   ws.onerror = () => {
     appendOutput('❌  연결 오류가 발생했습니다.\n', true);
-    runBtn.disabled = false;
-    runBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 2a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .75.433l9-5.5a.5.5 0 0 0 0-.866l-9-5.5A.5.5 0 0 0 2.5 2z"/></svg> 실행`;
+    resetRunBtn();
   };
 
   ws.onclose = () => {
-    if (runBtn.disabled) {
-      runBtn.disabled = false;
-      runBtn.innerHTML = `<img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" /> 실행`;
-    }
+    if (runBtn.disabled) resetRunBtn();
   };
 }
 
@@ -686,7 +745,16 @@ editor.addEventListener('keydown', (e) => {
 // ── Button events ──────────────────────────────────────────────────
 runBtn.addEventListener('click', runCode);
 
+runStopBtn.addEventListener('click', () => {
+  if (ws) { ws.close(); ws = null; }
+  appendOutput('\n⏹ 실행이 중단되었습니다.\n', true);
+  resetRunBtn();
+});
+
 debugBtn.addEventListener('click', startDebug);
+
+explorerActivityBtn.addEventListener('click', showSidebarExplorer);
+debugActivityBtn.addEventListener('click', showSidebarDebug);
 
 debugStepBtn.addEventListener('click', () => {
   if (debugWs) debugWs.send(JSON.stringify({ type: 'debug_step' }));

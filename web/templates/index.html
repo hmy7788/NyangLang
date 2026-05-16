@@ -45,51 +45,24 @@
   <!-- Activity Bar -->
   <div class="activitybar">
     <div class="activity-top">
-      <button class="activity-btn ab-active" title="탐색기">
+      <button class="activity-btn ab-active" id="explorer-activity-btn" title="탐색기">
         <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
           <path d="M1.5 1h5.563l4 4H14.5v9.5a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5V1.5A.5.5 0 0 1 1.5 1zM2 2v12h12V6H7L4 3H2V2z"/>
         </svg>
       </button>
-      <button class="activity-btn" title="검색">
-        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M11.5 7a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zm-.82 4.74a6 6 0 1 1 1.06-1.06L15.2 14.2l-1.06 1.06-3.46-3.52z"/>
-        </svg>
-      </button>
-      <button class="activity-btn" title="소스 제어">
-        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M5 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 5.5A3.5 3.5 0 0 1 5 2a3.5 3.5 0 0 1 .5 6.964V11.5a2 2 0 0 0 2 2h1.036A3.5 3.5 0 1 1 11 14.5v-1.036A3.5 3.5 0 0 1 7.5 10H6.5a3.5 3.5 0 0 1-1.5-.336V8.5zM11 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
-        </svg>
-      </button>
-      <button class="activity-btn" title="실행 및 디버그">
+      <button class="activity-btn" id="debug-activity-btn" title="실행 및 디버그">
         <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
           <path d="M2.5 2a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .75.433l9-5.5a.5.5 0 0 0 0-.866l-9-5.5A.5.5 0 0 0 2.5 2z"/>
         </svg>
       </button>
-      <button class="activity-btn" title="확장">
-        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M3.5 2A1.5 1.5 0 0 0 2 3.5v1A1.5 1.5 0 0 0 3.5 6h1A1.5 1.5 0 0 0 6 4.5v-1A1.5 1.5 0 0 0 4.5 2h-1zm5 0A1.5 1.5 0 0 0 7 3.5v1A1.5 1.5 0 0 0 8.5 6h1A1.5 1.5 0 0 0 11 4.5v-1A1.5 1.5 0 0 0 9.5 2h-1zm-5 5A1.5 1.5 0 0 0 2 8.5v1A1.5 1.5 0 0 0 3.5 11h1A1.5 1.5 0 0 0 6 9.5v-1A1.5 1.5 0 0 0 4.5 7h-1zm5 0A1.5 1.5 0 0 0 7 8.5v1A1.5 1.5 0 0 0 8.5 11h1A1.5 1.5 0 0 0 11 9.5v-1A1.5 1.5 0 0 0 9.5 7h-1zm-2.5 5A1.5 1.5 0 0 0 4.5 13.5a1.5 1.5 0 0 0 3 0A1.5 1.5 0 0 0 6 12h-1zm5 0A1.5 1.5 0 0 0 9.5 13.5a1.5 1.5 0 0 0 3 0A1.5 1.5 0 0 0 11 12h-1z"/>
-        </svg>
-      </button>
     </div>
-    <div class="activity-bottom">
-      <button class="activity-btn" title="계정">
-        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm5 5.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-.5C3 11 5.239 9.5 8 9.5s5 1.5 5 3.5v.5z"/>
-        </svg>
-      </button>
-      <button class="activity-btn" title="설정">
-        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
-          <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.474l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
-        </svg>
-      </button>
-    </div>
+    <div class="activity-bottom"></div>
   </div>
 
   <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">탐색기</div>
-    <div class="sidebar-body">
+    <div class="sidebar-header" id="sidebar-header">탐색기</div>
+    <div class="sidebar-body" id="sidebar-explorer-body">
       <div class="sidebar-section-title folder-toggle" id="folder-toggle">
         <span class="folder-arrow" id="folder-arrow">▾</span>
         <span>NYANG_LANG</span>
@@ -133,6 +106,36 @@
       </div>
     </div>
 
+    <!-- 디버그 사이드바 뷰 -->
+    <div id="debug-sidebar-body" class="sidebar-debug-body" style="display:none">
+      <div class="dbg-sb-toolbar">
+        <button id="debug-step-btn" class="dbg-btn" disabled title="다음 줄 실행">⏭ 다음 줄</button>
+        <button id="debug-cmd-step-btn" class="dbg-btn" disabled title="다음 명령어 실행">⏩ 명령어</button>
+        <button id="debug-continue-btn" class="dbg-btn" disabled title="계속 실행">▶ 계속</button>
+        <button id="debug-stop-btn" class="dbg-btn dbg-stop" disabled title="디버깅 중단">⏹ 중단</button>
+      </div>
+      <div class="dbg-sb-status">
+        상태: <span id="debug-status-text">대기 중</span>
+        &nbsp;|&nbsp; 라인: <span id="debug-line-text">-</span>
+      </div>
+      <div class="dbg-sb-section">
+        <div class="dbg-sb-title">변수</div>
+        <div id="debug-vars-wrap"><span class="dbg-empty">없음</span></div>
+      </div>
+      <div class="dbg-sb-section">
+        <div class="dbg-sb-title">배열</div>
+        <div id="debug-arrays-wrap"><span class="dbg-empty">없음</span></div>
+      </div>
+      <div class="dbg-sb-section">
+        <div class="dbg-sb-title">스택 <span class="debug-hint">(top→bottom)</span></div>
+        <pre id="debug-stack-view" class="debug-pre">-</pre>
+      </div>
+      <div class="dbg-sb-section">
+        <div class="dbg-sb-title">브레이크포인트 <span class="debug-hint">(라인 번호 클릭)</span></div>
+        <div id="debug-bp-list" class="debug-bp-list">없음</div>
+      </div>
+    </div>
+
     <!-- 사이드바 하단 고양이 -->
     <div class="sidebar-cat-zone">
       <img class="sidebar-cat" src="/static/images/header-cat-transparent.png" aria-hidden="true" />
@@ -157,6 +160,9 @@
         <button id="run-btn" class="run-btn" title="실행 (Ctrl+Enter)">
           <img src="/static/images/paw-btn-transparent.png" class="run-paw" aria-hidden="true" />
           실행
+        </button>
+        <button id="run-stop-btn" class="run-stop-btn" title="실행 중단" style="display:none">
+          ⏹ 중단
         </button>
         <button id="debug-btn" class="debug-btn" title="디버깅 시작">
           🐞 디버그
@@ -216,7 +222,7 @@
           <div class="terminal-tabs">
             <button class="terminal-tab tt-active" data-panel="output-panel">출력</button>
             <button class="terminal-tab" data-panel="vars-panel">변수</button>
-            <button class="terminal-tab" id="debug-tab-btn" data-panel="debug-panel">디버그</button>
+            <button class="terminal-tab" data-panel="syntax-panel">문법</button>
             <button class="terminal-tab" data-panel="problems-panel">문제</button>
             <button class="terminal-tab" data-panel="terminal-dummy-panel">터미널</button>
           </div>
@@ -263,25 +269,91 @@
               </table>
             </div>
           </div>
-          <!-- 디버그 패널 -->
-          <div id="debug-panel" class="panel-content">
-            <div class="debug-toolbar">
-              <button id="debug-step-btn" class="dbg-btn" disabled title="다음 줄 실행">⏭ 다음 줄</button>
-              <button id="debug-cmd-step-btn" class="dbg-btn" disabled title="다음 명령어 실행">⏩ 다음 명령어</button>
-              <button id="debug-continue-btn" class="dbg-btn" disabled title="계속 실행">▶ 계속</button>
-              <button id="debug-stop-btn" class="dbg-btn dbg-stop" disabled title="디버깅 중단">⏹ 중단</button>
-            </div>
-            <div class="debug-status">
-              상태: <span id="debug-status-text">대기 중</span>
-              &nbsp;|&nbsp; 라인: <span id="debug-line-text">-</span>
-            </div>
-            <div class="debug-section">
-              <div class="debug-section-title">스택 <span class="debug-hint">(top → bottom)</span></div>
-              <pre id="debug-stack-view" class="debug-pre">-</pre>
-            </div>
-            <div class="debug-section">
-              <div class="debug-section-title">브레이크포인트 <span class="debug-hint">(라인 번호 클릭으로 설정)</span></div>
-              <div id="debug-bp-list" class="debug-bp-list">없음</div>
+          <!-- 문법 패널 -->
+          <div id="syntax-panel" class="panel-content">
+            <div class="syntax-container">
+
+              <details class="syn-section" open>
+                <summary class="syn-title">기본 규칙</summary>
+                <table class="syn-table">
+                  <thead><tr><th>문법</th><th>설명</th><th>예시</th></tr></thead>
+                  <tr><td class="syn-code">야옹</td><td>모든 명령문의 종료자</td><td class="syn-ex">냥냥.,야옹</td></tr>
+                  <tr><td class="syn-code"># ...</td><td>주석 (공백·한글·영어·기호 모두 주석)</td><td class="syn-ex">냥.,야옹 # 변수1=0</td></tr>
+                  <tr><td class="syn-code">냥 N개</td><td>변수/배열 ID = 냥의 개수</td><td class="syn-ex">냥=1, 냥냥=2, 냥냥냥=3</td></tr>
+                </table>
+              </details>
+
+              <details class="syn-section" open>
+                <summary class="syn-title">정수 리터럴</summary>
+                <table class="syn-table">
+                  <thead><tr><th>문법</th><th>설명</th><th>예시</th></tr></thead>
+                  <tr><td class="syn-code">. . . .</td><td>점 N개 → 정수 +N</td><td class="syn-ex">.... = 4</td></tr>
+                  <tr><td class="syn-code">, , , ,</td><td>반점 N개 → 정수 -N</td><td class="syn-ex">,,, = -3</td></tr>
+                  <tr><td class="syn-code">혼합</td><td>점 M개 + 반점 N개 = M-N</td><td class="syn-ex">.,, = -1</td></tr>
+                </table>
+              </details>
+
+              <details class="syn-section" open>
+                <summary class="syn-title">변수</summary>
+                <table class="syn-table">
+                  <thead><tr><th>문법</th><th>설명</th><th>예시</th></tr></thead>
+                  <tr><td class="syn-code">냥N &lt;값&gt; 야옹</td><td>변수N 선언 및 초기화</td><td class="syn-ex">냥냥....야옹  # 변수2=4</td></tr>
+                  <tr><td class="syn-code">&lt;값&gt; ~ 야옹</td><td>정수값을 스택에 push</td><td class="syn-ex">...~야옹  # 스택에 3</td></tr>
+                  <tr><td class="syn-code">냥N ~ 야옹</td><td>변수N 값을 스택에 push</td><td class="syn-ex">냥냥~야옹  # 변수2 push</td></tr>
+                  <tr><td class="syn-code">냥N ~~ 야옹</td><td>스택 top을 pop → 변수N에 저장</td><td class="syn-ex">냥냥~~야옹  # pop → 변수2</td></tr>
+                </table>
+              </details>
+
+              <details class="syn-section" open>
+                <summary class="syn-title">연산</summary>
+                <table class="syn-table">
+                  <thead><tr><th>문법</th><th>설명</th><th>예시 (스택: a, b)</th></tr></thead>
+                  <tr><td class="syn-code">냐냐~야옹</td><td>덧셈 (a + b)</td><td class="syn-ex">3~야옹 4~야옹 냐냐~야옹  # 7</td></tr>
+                  <tr><td class="syn-code">냐냐냐~야옹</td><td>뺄셈 (a − b)</td><td class="syn-ex">...~야옹 .~야옹 냐냐냐~야옹  # 2</td></tr>
+                  <tr><td class="syn-code">냐냐냐냐~야옹</td><td>곱셈 (a × b)</td><td class="syn-ex">...~야옹 ...~야옹 냐냐냐냐~야옹  # 9</td></tr>
+                  <tr><td class="syn-code">냐냐냐냐냐~야옹</td><td>나눗셈 (a // b)</td><td class="syn-ex">......~야옹 ..~야옹 냐냐냐냐냐~야옹  # 3</td></tr>
+                  <tr><td class="syn-code">냐냐냐냐냐냐~야옹</td><td>나머지 (a % b)</td><td class="syn-ex">.......~야옹 ...~야옹 냐냐냐냐냐냐~야옹  # 1</td></tr>
+                </table>
+              </details>
+
+              <details class="syn-section" open>
+                <summary class="syn-title">입출력</summary>
+                <table class="syn-table">
+                  <thead><tr><th>문법</th><th>설명</th><th>예시</th></tr></thead>
+                  <tr><td class="syn-code">냥N ?? 야옹</td><td>정수 입력 → 변수N</td><td class="syn-ex">냥??야옹  # 변수1 ← 입력</td></tr>
+                  <tr><td class="syn-code">냥N !? 야옹</td><td>변수N 십진수 출력 + 줄바꿈</td><td class="syn-ex">냥냥!?야옹  # "4\n"</td></tr>
+                  <tr><td class="syn-code">냥N !?? 야옹</td><td>변수N 십진수 출력 (줄바꿈 없음)</td><td class="syn-ex">냥냥!??야옹  # "4"</td></tr>
+                  <tr><td class="syn-code">냥N !??? 야옹</td><td>변수N 십진수 출력 + 공백</td><td class="syn-ex">냥냥!???야옹  # "4 "</td></tr>
+                  <tr><td class="syn-code">냥N !!? 야옹</td><td>변수N → ASCII 문자 출력 + 줄바꿈</td><td class="syn-ex">냥!!?야옹  # chr(변수1)</td></tr>
+                  <tr><td class="syn-code">냥N !!?? 야옹</td><td>변수N → ASCII 문자 출력 (줄바꿈 없음)</td><td class="syn-ex">냥!!??야옹</td></tr>
+                  <tr><td class="syn-code">냐! 야옹</td><td>스택 상태 디버그 출력</td><td class="syn-ex">냐!야옹</td></tr>
+                  <tr><td class="syn-code">냐!! 야옹</td><td>변수 테이블 디버그 출력</td><td class="syn-ex">냐!!야옹</td></tr>
+                </table>
+              </details>
+
+              <details class="syn-section" open>
+                <summary class="syn-title">점프 (조건 분기)</summary>
+                <table class="syn-table">
+                  <thead><tr><th>문법</th><th>설명</th><th>예시</th></tr></thead>
+                  <tr><td class="syn-code">&lt;정수&gt; ? &lt;라인&gt; 야옹</td><td>정수 ≠ 0이면 해당 라인으로 점프</td><td class="syn-ex">.?...야옹  # 무조건 3번 줄로</td></tr>
+                  <tr><td class="syn-code">냥N ? &lt;라인&gt; 야옹</td><td>변수N ≠ 0이면 점프</td><td class="syn-ex">냥냥?...야옹  # 변수2≠0이면 3번 줄로</td></tr>
+                  <tr><td class="syn-code">냥N ? 냥M 야옹</td><td>변수N ≠ 0이면 변수M번 라인으로 점프</td><td class="syn-ex">냥?냥냥야옹  # 변수1≠0이면 변수2번 줄로</td></tr>
+                  <tr><td class="syn-code">조건 = 0</td><td>점프 없이 다음 줄 순차 실행</td><td class="syn-ex">냥냥.,야옹  # 변수2=0 → 점프 안 함</td></tr>
+                </table>
+              </details>
+
+              <details class="syn-section" open>
+                <summary class="syn-title">배열</summary>
+                <table class="syn-table">
+                  <thead><tr><th>문법</th><th>설명</th><th>예시</th></tr></thead>
+                  <tr><td class="syn-code">냥N ! &lt;크기&gt; 야옹</td><td>배열N 생성 (0으로 초기화)</td><td class="syn-ex">냥!.....야옹  # 배열1, 길이 5</td></tr>
+                  <tr><td class="syn-code">냥N ! &lt;idx&gt; ! &lt;값&gt; 야옹</td><td>배열N[idx] = 값</td><td class="syn-ex">냥!..!...야옹  # 배열1[2]=3</td></tr>
+                  <tr><td class="syn-code">냥N !? &lt;idx&gt; !? ~ 야옹</td><td>배열N[idx] 값을 스택에 push</td><td class="syn-ex">냥!?..!?~야옹  # 배열1[2] → 스택</td></tr>
+                  <tr><td class="syn-code">냥N !? &lt;idx&gt; !? 냥M 야옹</td><td>배열N[idx] 값을 변수M에 저장</td><td class="syn-ex">냥!?.!?냥냥야옹  # 배열1[1] → 변수2</td></tr>
+                  <tr><td class="syn-code">냥N ! 냥M ?? 야옹</td><td>배열N[변수M] ← 사용자 입력</td><td class="syn-ex">냥!냥냥??야옹  # 배열1[변수2] ← 입력</td></tr>
+                </table>
+              </details>
+
             </div>
           </div>
           <!-- 문제 패널 -->
