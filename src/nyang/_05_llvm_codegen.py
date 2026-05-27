@@ -32,10 +32,12 @@ class LLVMCodeGen:
 
         self.printf_fn: ir.Function | None = None
         self.scanf_fn: ir.Function | None = None
+        self.set_console_cp_fn: ir.Function | None = None
         self._fmt_cache: dict[str, ir.GlobalVariable] = {}
 
         self._declare_printf()
         self._declare_scanf()
+        self._declare_set_console_cp()
         self._setup_main()
 
     # ── 외부 함수 선언 ────────────────────────────────────────────────────
@@ -48,13 +50,23 @@ class LLVMCodeGen:
         ty = ir.FunctionType(i32, [i8.as_pointer()], var_arg=True)
         self.scanf_fn = ir.Function(self.module, ty, name="scanf")
 
+    def _declare_set_console_cp(self) -> None:
+        """Windows SetConsoleOutputCP — 비Windows에서는 선언만 하고 호출 안 함"""
+        ty = ir.FunctionType(i32, [i32])
+        self.set_console_cp_fn = ir.Function(self.module, ty, name="SetConsoleOutputCP")
+
     # ── main 함수 + entry 블록 ────────────────────────────────────────────
 
     def _setup_main(self) -> None:
+        import sys
         fn_ty = ir.FunctionType(i32, [])
         self.main_fn = ir.Function(self.module, fn_ty, name="main")
         entry = self.main_fn.append_basic_block("entry")
         self.builder = ir.IRBuilder(entry)
+
+        # Windows: 콘솔 출력 UTF-8로 설정
+        if sys.platform == "win32":
+            self.builder.call(self.set_console_cp_fn, [ir.Constant(i32, 65001)])
 
         self.stack_arr = self.builder.alloca(ir.ArrayType(i32, 256), name="stack")
         self.stack_sp  = self.builder.alloca(i32, name="sp")
