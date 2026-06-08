@@ -9,25 +9,15 @@ __pycache__/
 build/
 dist/
 
-# Python cache files
-__pycache__/
-*.py[cod]
-*$py.class
-web/__pycache__/
+# 빌드 산출물
+*.exe
+*.o
 
-# Packaging files
-*.egg-info/
-.eggs/
-build/
-dist/
-
+# 프로젝트 로컬 문서/스크래치
 지시사항.md
 CLAUDE.md
 한글.py
 프로젝트_소개.md
-.claude
 GEMINI.md
-
-*.exe
-*.o
+.claude
 examples/test_simple.nyang
