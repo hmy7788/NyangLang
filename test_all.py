@@ -4,8 +4,8 @@
 - 입력이 필요한 파일은 미리 정의된 stdin 사용
 - 두 결과가 일치하면 PASS
 
-비교 시 인터프리터의 입력 프롬프트("변수N 입력 > ")는 제거 후 비교
-(LLVM은 scanf를 쓰므로 프롬프트를 출력하지 않음 — 정상 동작)
+비교 시 양쪽 백엔드의 입력 프롬프트("변수N 입력 > ", "배열N M번 인덱스 입력 > ")는
+제거 후 비교 (인터프리터·컴파일 exe 모두 동일하게 프롬프트를 출력함)
 """
 import subprocess
 import re
@@ -27,7 +27,7 @@ TEST_CASES = [
     ("examples/bench.nyang", "",        True),    # 입력 없음 → 순수 계산
 ]
 
-_PROMPT_RE = re.compile(r"변수\d+ 입력 > ")
+_PROMPT_RE = re.compile(r"변수\d+ 입력 > |배열\d+ \d+번 인덱스 입력 > ")
 
 
 def run(cmd, stdin_data=""):
@@ -85,9 +85,9 @@ def main():
         # 4. LLVM exe 실행
         r = subprocess.run(
             [exe], input=stdin,
-            capture_output=True, encoding="ascii", errors="replace",
+            capture_output=True, encoding="utf-8", errors="replace",
         )
-        out_llvm = r.stdout.strip()
+        out_llvm = strip_prompts(r.stdout.strip())
         print(f"  LLVM      : {repr(out_llvm)}")
 
         # 5. 비교

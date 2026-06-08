@@ -61,7 +61,12 @@ class CommandExecMixin:
         elif op == 4: result = a * b
         elif op == 5:
             if b == 0: raise ZeroDivisionError("0으로 나눌 수 없습니다.")
-            result = a // b
+            result = abs(a) // abs(b)         # 컴파일러 sdiv와 동일하게 0 방향으로 절삭
+            if (a < 0) != (b < 0): result = -result
+        elif op == 6:
+            if b == 0: raise ZeroDivisionError("0으로 나눌 수 없습니다.")
+            result = abs(a) % abs(b)          # 컴파일러 srem과 동일하게 피제수 부호를 따름
+            if a < 0: result = -result
         else: raise RuntimeError("지원하지 않는 연산입니다.")
         
         self.stack.append(result)
@@ -97,10 +102,7 @@ class CommandExecMixin:
         if cmd.output_form == "decimal":
             out = value
         elif cmd.output_form == "ascii":
-            try:
-                out = chr(value)
-            except ValueError:
-                raise ValueError("ASCII 범위를 벗어난 값입니다.")
+            out = chr(value & 0xFF)           # 컴파일러 %c와 동일하게 하위 1바이트 출력
         else:
             raise RuntimeError("알 수 없는 output_form")
         
@@ -289,8 +291,8 @@ class Interpreter(CommandExecMixin):
     stack: List[int] = field(default_factory=list)
     stack_top: Optional[int] = None
     last_was_operation: bool = False
-    output_func: Callable[[str], None] = print
-    input_func: Callable[[int], None] = input
+    output_func: Callable[..., None] = print
+    input_func: Callable[[str], str] = input
     current_line: int = 0
     debug_hook: Optional[Callable[[int], None]] = None  # debug: called before each line with pc
     cmd_hook: Optional[Callable[[int, int], None]] = None  # debug: called before each command with (pc, cmd_idx)
@@ -299,15 +301,13 @@ class Interpreter(CommandExecMixin):
     def write(self, msg="", end=None) -> None:
         self.output_func(msg, end=end)
 
-    
-    def inputs(self, msg=""):
-        self.input_func()
-
 
     def reset(self) -> None:
         self.variables_table.clear()
+        self.array_table.clear()
         self.stack.clear()
         self.stack_top = None
+        self.last_was_operation = False
 
 
     # ───────────────── 파일 실행용: pc 기반 루프 ─────────────────
@@ -316,16 +316,21 @@ class Interpreter(CommandExecMixin):
         pc = 0
         n = len(clean_lines)
 
+        # 라인별 파싱 결과 캐시: 점프로 같은 라인을 반복 실행해도 1회만 파싱
+        parsed_cache: Dict[int, List[Command]] = {}
+
         while 0 <= pc < n:
             if self.debug_hook:
                 self.debug_hook(pc)
             self.current_line = pc + 1
-            line = clean_lines[pc]
-            tokens = lex_line(line)
-            if not tokens:
+
+            cmds = parsed_cache.get(pc)
+            if cmds is None:
+                cmds = parse_line(lex_line(clean_lines[pc]))
+                parsed_cache[pc] = cmds
+            if not cmds:
                 pc += 1
                 continue
-            cmds = parse_line(tokens)
 
             jumped = False
             for cmd_idx, cmd in enumerate(cmds):

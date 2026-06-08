@@ -228,23 +228,20 @@ def parse_nyang_command(token_stream: TokenStream) -> Command:
         token_stream.consume()
         next_token = token_stream.peek()
 
-        if next_token is None:
-            raise SyntaxError()
+        if next_token is None or next_token.type != TokenType.QUESTION:
+            raise SyntaxError("출력 명령에는 모드(?, ??, ???)가 필요합니다.")
 
-        output_mode = None
-        if next_token.type == TokenType.QUESTION:
-            question_token = next_token
+        question_token = next_token
+        # <NYANG><!>?
+        if question_token.value == 1: output_mode = 'newline'
+        # <NYANG><!>??
+        elif question_token.value == 2: output_mode = 'inline'
+        # <NYANG><!>???
+        elif question_token.value == 3: output_mode = 'space'
+        # 물음표 개수 오류
+        else: raise SyntaxError(f'물음표 개수때문에 ~ 물음표 개수: {question_token.value}')
 
-            # <NYANG><!>?
-            if question_token.value == 1: output_mode = 'newline'
-            # <NYANG><!>??
-            elif question_token.value == 2: output_mode = 'inline'
-            # <NYANG><!>???
-            elif question_token.value == 3: output_mode = 'space'
-            # 물음표 개수 오류
-            else: raise SyntaxError(f'물음표 개수때문에 ~ 물음표 개수: {question_token.value}')
-
-            token_stream.consume()
+        token_stream.consume()
 
         return Command(CommandKind.OUTPUT,
                        output_kind='nyang',
@@ -286,23 +283,21 @@ def parse_int_command(token_stream: TokenStream) -> Command:
 
         next_token = token_stream.peek() # 다음 토큰 확인
 
-        if next_token is None:
-            raise SyntaxError()
-
         # <INT><!><?>
-        if next_token.type == TokenType.QUESTION:
-            question_token = next_token
-            token_stream.consume() # <?> 소비
-            output_mode = None
+        if next_token is None or next_token.type != TokenType.QUESTION:
+            raise SyntaxError("출력 명령에는 모드(?, ??, ???)가 필요합니다.")
 
-            # <INT><!>?
-            if question_token.value == 1: output_mode = 'newline'
-            # <INT><!>??
-            elif question_token.value == 2: output_mode = 'inline'
-            # <INT><!>???
-            elif question_token.value == 3: output_mode = 'space'
-            # 물음표 개수 오류
-            else: raise SyntaxError(f'물음표 개수때문에 ~ 물음표 개수: {question_token.value}')
+        question_token = next_token
+        token_stream.consume() # <?> 소비
+
+        # <INT><!>?
+        if question_token.value == 1: output_mode = 'newline'
+        # <INT><!>??
+        elif question_token.value == 2: output_mode = 'inline'
+        # <INT><!>???
+        elif question_token.value == 3: output_mode = 'space'
+        # 물음표 개수 오류
+        else: raise SyntaxError(f'물음표 개수때문에 ~ 물음표 개수: {question_token.value}')
 
         return Command(CommandKind.OUTPUT,
                        output_kind='int',

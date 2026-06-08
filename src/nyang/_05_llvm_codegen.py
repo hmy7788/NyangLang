@@ -134,7 +134,9 @@ class LLVMCodeGen:
                 elif cmd.kind == CommandKind.ARRAY_DECL and cmd.array_decl_mode == 1:
                     used_ids.add(cmd.array_length)
         for nyang_id in sorted(used_ids):
-            self.variables[nyang_id] = self.builder.alloca(i32, name=f"var{nyang_id}")
+            var = self.builder.alloca(i32, name=f"var{nyang_id}")
+            self.builder.store(ir.Constant(i32, 0), var)  # 미선언 변수도 0으로 결정적 초기화
+            self.variables[nyang_id] = var
 
     def _pre_alloc_arrays(self, all_commands: list[list[Command]]) -> None:
         """ARRAY_DECL 명령을 스캔해 LLVM 전역 배열 변수 생성"""
@@ -269,6 +271,11 @@ class LLVMCodeGen:
             for idx, blk in enumerate(line_blocks):
                 sw.add_case(ir.Constant(i32, idx + 1), blk)  # 라인 번호는 1-indexed
 
+    def _emit_display_unsupported(self, cmd: Command) -> None:
+        raise NotImplementedError(
+            "디버그 출력(냐!, 냐!!)은 LLVM 컴파일 미지원입니다. 인터프리터(nyang run)를 사용하세요."
+        )
+
     def _emit(self, cmd: Command) -> None:
         dispatch = {
             CommandKind.VAR_DECL:   self._emit_var_decl,
@@ -282,6 +289,8 @@ class LLVMCodeGen:
             CommandKind.ARRAY_WRITE: self._emit_array_write,
             CommandKind.ARRAY_READ:  self._emit_array_read,
             CommandKind.ARRAY_INPUT: self._emit_array_input,
+            CommandKind.DISPLAY_STACK:           self._emit_display_unsupported,
+            CommandKind.DISPLAY_VARIABLES_TABLE: self._emit_display_unsupported,
         }
         handler = dispatch.get(cmd.kind)
         if handler:

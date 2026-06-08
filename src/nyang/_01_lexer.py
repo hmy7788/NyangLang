@@ -8,17 +8,6 @@ from nyang._00_types import TokenType, Token
 # import ========================================
 
 
-# 토큰별 최대 연속 허용 개수 (0은 무제한)
-MAX_COUNTS = {
-    TokenType.NYANG: 0,
-    TokenType.INT: 0,
-    TokenType.NYA: 5,
-    TokenType.TILDE: 1,
-    TokenType.BANG: 2,
-    TokenType.QUESTION: 3
-}
-
-
 def _strip_comments(line: str) -> str:
     """
     #### input: 1개 라인의 명령어
@@ -76,7 +65,12 @@ def lex_line(line: str) -> List[Token]:
 
         ttype = classify_char(ch)
         if ttype is None:
-            raise SyntaxError(f"어휘 오류: '{ch}'는 허용하지 않습니다.")
+            # 토큰에 쓰이는 문자(냥/냐/./,/~/!/?/야옹) 외의 모든 문자는 주석으로 간주하고 무시
+            if current_type is not None:
+                tokens.append(Token(current_type, count))
+                current_type, count = None, 0
+            i += 1
+            continue
 
         # 1. 타입이 바뀌면 지금까지 쌓인 토큰을 저장(Flush)
         if current_type != ttype:
