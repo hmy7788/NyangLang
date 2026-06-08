@@ -312,7 +312,7 @@ class LLVMCodeGen:
         self._pre_alloc_arrays(all_commands)
 
         # 라인별 basic block + exit block 생성
-        line_blocks = [self.main_fn.append_basic_block(f"line_{i}") for i in range(n)]
+        line_blocks = [self.main_fn.append_basic_block(f"line_{i+1}") for i in range(n)]
         exit_block  = self.main_fn.append_basic_block("exit")
 
         # entry → line_0 (또는 exit)
