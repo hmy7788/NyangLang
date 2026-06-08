@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import os
 import threading
 import time
 from typing import Optional
@@ -64,6 +65,25 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+# examples/ 폴더의 .nyang 예제를 그대로 읽어 제공 (하드코딩 복사본 없이 단일 출처)
+EXAMPLES_DIR = "examples"
+EXAMPLES_SKIP = {"bench.nyang"}  # 벤치마크(출력 없음·장시간)는 플레이그라운드에서 제외
+
+
+@app.get("/api/examples")
+async def list_examples():
+    items = []
+    if os.path.isdir(EXAMPLES_DIR):
+        for fn in sorted(os.listdir(EXAMPLES_DIR)):
+            if fn.endswith(".nyang") and fn not in EXAMPLES_SKIP:
+                try:
+                    with open(os.path.join(EXAMPLES_DIR, fn), encoding="utf-8") as f:
+                        items.append({"name": fn, "code": f.read()})
+                except OSError:
+                    pass
+    return {"examples": items}
+
+
 @app.websocket("/ws/run")
 async def ws_run(websocket: WebSocket):
     await websocket.accept()
@@ -105,7 +125,13 @@ async def ws_run(websocket: WebSocket):
         timer.resume()
         return val
 
-    interp = Interpreter(output_func=collect, input_func=web_input)
+    # 협조적 정지: 매 라인 실행 전 호출되어, 중단/타임아웃/연결종료 시 워커 스레드를 빠져나오게 함
+    stopped = [False]
+    def stop_hook(pc: int):
+        if stopped[0]:
+            raise RuntimeError("실행이 중단되었습니다.")
+
+    interp = Interpreter(output_func=collect, input_func=web_input, debug_hook=stop_hook)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     exec_future = loop.run_in_executor(executor, lambda: interp.run_program(lines))
 
@@ -114,6 +140,7 @@ async def ws_run(websocket: WebSocket):
         while not exec_future.done():
             if timer.elapsed() > 5.0:
                 timed_out = True
+                stopped[0] = True       # 워커 스레드도 다음 라인에서 중단
                 break
             try:
                 msg = await asyncio.wait_for(websocket.receive_json(), timeout=0.1)
@@ -123,6 +150,8 @@ async def ws_run(websocket: WebSocket):
             except asyncio.TimeoutError:
                 pass
             except WebSocketDisconnect:
+                stopped[0] = True
+                input_event.set()       # 입력 대기 중이면 해제
                 executor.shutdown(wait=False)
                 return
 
@@ -151,6 +180,8 @@ async def ws_run(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
     finally:
+        stopped[0] = True               # 어떤 경로로 종료되든 워커 스레드 정지 신호
+        input_event.set()
         executor.shutdown(wait=False)
 
 

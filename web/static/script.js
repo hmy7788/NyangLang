@@ -35,87 +35,29 @@ const debugVarsWrap     = document.getElementById('debug-vars-wrap');
 const debugArraysWrap   = document.getElementById('debug-arrays-wrap');
 
 // ── Examples ───────────────────────────────────────────────────────
-const examples = {
-  main: '',
-  hello: `# "Hello World!"를 출력하는 코드
-# H: 72
-..........~야옹 .......~야옹
-냐냐냐냐~야옹 냥~~야옹 냥~야옹 ..~야옹 냐냐~야옹 냥~~야옹
-냥!!??야옹
+// 파일명 → 코드. main.nyang은 빈 스크래치, 나머지는 /api/examples에서 동적 로드.
+const exampleCode = { 'main.nyang': '' };
 
-# e: 101
-..........~야옹 ..........~야옹
-냐냐냐냐~야옹 냥냥~~야옹 냥냥~야옹 .~야옹 냐냐~야옹 냥냥~~야옹
-냥냥!!??야옹
+function renderSidebarFiles() {
+  const names = Object.keys(exampleCode);
+  folderContents.innerHTML = names.map((name, i) => `
+        <div class="file-item${i === 0 ? ' fi-active' : ''}" data-file="${name}" data-name="${name}">
+          <span class="fi-indent"></span>
+          <span class="fi-icon nyang-icon">🐾</span>
+          <span class="fi-name">${name}</span>
+        </div>`).join('');
+}
 
-# l: 108
-냥냥~야옹 .......~야옹
-냐냐~야옹 냥냥냥~~야옹 냥냥냥~야옹
-냥냥냥!!??야옹
-
-# l: 108
-냥냥~야옹 .......~야옹
-냐냐~야옹 냥냥냥~~야옹 냥냥냥~야옹
-냥냥냥!!??야옹
-
-# o: 111
-...~야옹 냐냐~야옹 냥냥냥냥~~야옹
-냥냥냥냥!!???야옹
-
-# W: 87
-냥~야옹 ...............~야옹
-냐냐~야옹 냥~~야옹 냥!!??야옹
-
-# o: 111
-냥냥냥냥!!??야옹
-
-# r: 114
-냥냥냥냥~야옹 ...~야옹 냐냐~야옹 냥냥냥냥냥~~야옹
-냥냥냥냥냥!!??야옹
-
-# l: 108
-냥냥냥!!??야옹
-
-# d: 100
-냥냥~야옹 .~야옹 냐냐냐~야옹 냥냥~~야옹
-냥냥!!??야옹
-
-# !: 33
-...~야옹 ...........~야옹 냐냐냐냐~야옹 냥~~야옹
-냥!!??야옹`,
-
-  loop: `냥.야옹 냥냥.....야옹
-냥!?야옹 냥~야옹 .~야옹 냐냐~야옹 냥~~야옹
-냥냥~야옹 ,~야옹 냐냐~야옹 냥냥~~야옹
-냥냥?..야옹`,
-
-  input: `냥??야옹 냥!?야옹`,
-
-  gugudan: `# 구구단 (2단 ~ 9단)
-# 변수1: i (단), 변수2: j, 변수3: i*j 결과, 변수4: 루프 조건
-
-냥..야옹                                              # (1)  i = 2
-냥냥.야옹                                             # (2)  j = 1  ← 내부 루프 시작
-냥~야옹 냥냥~야옹 냐냐냐냐~야옹 냥냥냥~~야옹          # (3)  변수3 = i * j
-냥냥냥!???야옹                                         # (4)  결과 출력 (공백 구분)
-냥냥~야옹 .~야옹 냐냐~야옹 냥냥~~야옹                 # (5)  j = j + 1
-냥냥~야옹 ..........~야옹 냐냐냐~야옹 냥냥냥냥~~야옹  # (6)  변수4 = j - 10
-냥냥냥냥?...야옹                                       # (7)  변수4 ≠ 0 (j ≠ 10) 이면 line 3
-..........!!??야옹                                     # (8)  줄바꿈 출력 (chr(10))
-냥~야옹 .~야옹 냐냐~야옹 냥~~야옹                     # (9)  i = i + 1
-냥~야옹 ..........~야옹 냐냐냐~야옹 냥냥냥냥~~야옹    # (10) 변수4 = i - 10
-냥냥냥냥?..야옹                                        # (11) 변수4 ≠ 0 (i ≠ 10) 이면 line 2`,
-
-  gugudan_input: `냥??야옹
-냥냥.야옹
-
-......~야옹 .......~야옹 냐냐냐냐~야옹 냥냥냥~~야옹
-......~야옹 ..........~야옹 냐냐냐냐~야옹 냥냥냥냥~~야옹 냥냥냥냥~야옹 .~야옹 냐냐~야옹 냥냥냥냥~~야옹
-냥~야옹 냥냥~야옹 냐냐냐냐~야옹 냥냥냥냥냥~~야옹
-냥!???야옹 냥냥냥!!???야옹 냥냥!???야옹 냥냥냥냥!!???야옹 냥냥냥냥냥!?야옹
-냥냥~야옹 .~야옹 냐냐~야옹 냥냥~~야옹 냥냥~야옹 ..........~야옹 냐냐냐~야옹 냥냥냥냥냥냥~~야옹
-냥냥냥냥냥냥?....야옹`
-};
+async function loadExamples() {
+  try {
+    const res = await fetch('/api/examples');
+    const data = await res.json();
+    for (const ex of data.examples) exampleCode[ex.name] = ex.code;
+  } catch (e) {
+    // 네트워크 오류 시 main.nyang만 표시
+  }
+  renderSidebarFiles();
+}
 
 // ── State ──────────────────────────────────────────────────────────
 let currentErrorLine = null;
@@ -629,7 +571,7 @@ document.getElementById('sidebar-files').addEventListener('click', (e) => {
   titlebarFile.textContent  = filename;
   bcFilename.textContent    = filename;
 
-  editor.value = examples[fileKey] || '';
+  editor.value = exampleCode[fileKey] ?? '';
   updateLineNumbers();
   updateHighlight();
   setDirty(false);
@@ -739,6 +681,8 @@ editor.addEventListener('keydown', (e) => {
     editor.selectionStart = editor.selectionEnd = start + 2;
     updateLineNumbers(null);
     updateHighlight();
+    setDirty(true);
+    updateCursorPos();
   }
 });
 
@@ -811,6 +755,7 @@ copyOutputBtn.addEventListener('click', async () => {
 });
 
 // ── Init ───────────────────────────────────────────────────────────
+loadExamples();
 updateLineNumbers();
 updateHighlight();
 updateCursorPos();
