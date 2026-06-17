@@ -8,7 +8,7 @@ EXE_FILE   = r"examples\bench.exe"
 PYTHON     = sys.executable
 VENV_NYANG = r".venv\Scripts\nyang.exe"
 
-def measure(label, cmd, runs=3):
+def measure(label, cmd, runs=10):
     times = []
     for _ in range(runs):
         t0 = time.perf_counter()
@@ -19,9 +19,9 @@ def measure(label, cmd, runs=3):
     return avg
 
 def main():
-    print("=" * 50)
-    print("NyangLang 벤치마크: 인터프리터 vs LLVM 컴파일")
-    print("=" * 50)
+    print("=" * 62)
+    print("NyangLang 벤치마크: 인터프리터 vs LLVM 컴파일 (10만 루프 기준)")
+    print("=" * 62)
     print(f"파일: {NYANG_FILE}")
     print()
 
@@ -41,9 +41,9 @@ def main():
 
     # 3. 결과
     print()
-    print("=" * 50)
+    print("=" * 62)
     print("결과")
-    print("=" * 50)
+    print("=" * 62)
     print(f"  인터프리터:    {t_interp:.3f}초")
     print(f"  LLVM 컴파일:   {t_compile:.3f}초")
     speedup = t_interp / t_compile if t_compile > 0 else float("inf")
