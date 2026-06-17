@@ -10,21 +10,21 @@ from nyang._02_parser import parse_line
 binding.initialize_native_target()
 binding.initialize_native_asmprinter()
 
-i32 = ir.IntType(32)
-i64 = ir.IntType(64)
-i8  = ir.IntType(8)
-i1  = ir.IntType(1)
+i32 = ir.IntType(32) # 32비트 / 정수용
+i64 = ir.IntType(64) # 64비트 / 포인터 계산용
+i8  = ir.IntType(8) # 8비트 / 문자열, 문자용
+i1  = ir.IntType(1) # 1비트 / 불리언 (조건 분기 참/거짓)
 
 
 class LLVMCodeGen:
     def __init__(self):
-        self.module = ir.Module(name="nyang_program")
-        self.module.triple = binding.get_default_triple()
+        self.module = ir.Module(name="nyang_program")       # IR 최상위 컨테이너 = 하나의 프로그램 = 하나의 모듈. 변수나 배열등 다 여기 담김
+        self.module.triple = binding.get_default_triple()   # "어떤 OS/CPU용으로 컴파일할지" 식별자임. 현재 PC 환경을 자동으로 채택
 
         self.builder: ir.IRBuilder | None = None
         self.main_fn: ir.Function | None = None
 
-        self.variables: dict[int, ir.AllocaInstr] = {}  # nyang_id → alloca
+        self.variables: dict[int, ir.AllocaInstr] = {}   # nyang_id → alloca. 냥 변수 ID -> 변수의 메모리 위치
         self.stack_arr: ir.AllocaInstr | None = None     # int stack[256]
         self.stack_sp: ir.AllocaInstr | None = None      # 스택 포인터
 
@@ -60,7 +60,7 @@ class LLVMCodeGen:
     def _setup_main(self) -> None:
         import sys
         fn_ty = ir.FunctionType(i32, [])
-        self.main_fn = ir.Function(self.module, fn_ty, name="main")
+        self.main_fn = ir.Function(self.module, fn_ty, name="main") # int main()
         entry = self.main_fn.append_basic_block("entry")
         self.builder = ir.IRBuilder(entry)
 
@@ -88,15 +88,16 @@ class LLVMCodeGen:
     # ── 스택 헬퍼 ────────────────────────────────────────────────────────
 
     def _stack_push(self, val: ir.Value) -> None:
-        sp   = self.builder.load(self.stack_sp, name="sp")
-        sp64 = self.builder.sext(sp, i64, name="sp64")
-        ptr  = self.builder.gep(self.stack_arr, [ir.Constant(i64, 0), sp64], name="slot")
-        self.builder.store(val, ptr)
-        new_sp = self.builder.add(sp, ir.Constant(i32, 1), name="sp_inc")
-        self.builder.store(new_sp, self.stack_sp)
+        sp   = self.builder.load(self.stack_sp, name="sp")                                  # 현재 sp 읽기
+        sp64 = self.builder.sext(sp, i64, name="sp64")                                      # 32 -> 64비트 확장
+        ptr  = self.builder.gep(self.stack_arr, [ir.Constant(i64, 0), sp64], name="slot")   # stack[sp] 주소
+        self.builder.store(val, ptr)                                                        # 변수값 스택에 push
+        new_sp = self.builder.add(sp, ir.Constant(i32, 1), name="sp_inc")                   # sp+1
+        self.builder.store(new_sp, self.stack_sp)                                           # sp 갱신
 
+    # push와 반대 개
     def _stack_pop(self, name: str = "pop") -> ir.Value:
-        sp     = self.builder.load(self.stack_sp, name="sp")
+        sp     = self.builder.load(self.stack_sp, name="sp")    # 현재 sp 읽기
         new_sp = self.builder.sub(sp, ir.Constant(i32, 1), name="sp_dec")
         self.builder.store(new_sp, self.stack_sp)
         sp64 = self.builder.sext(new_sp, i64, name="sp64")
@@ -308,8 +309,8 @@ class LLVMCodeGen:
         n = len(all_commands)
 
         # entry 블록: 변수/배열 pre-alloc
-        self._pre_alloc_vars(all_commands)
-        self._pre_alloc_arrays(all_commands)
+        self._pre_alloc_vars(all_commands)      # 컴파일 시작 전 변수명 pre-alloc
+        self._pre_alloc_arrays(all_commands)    # 컴파일 시작 전 배열명 pre-alloc
 
         # 라인별 basic block + exit block 생성
         line_blocks = [self.main_fn.append_basic_block(f"line_{i+1}") for i in range(n)]
